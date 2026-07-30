@@ -78,7 +78,6 @@
     .fill-icon {
       font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
     }
-    /* Hide scrollbars for clean app feel */
     ::-webkit-scrollbar {
       display: none;
     }
@@ -90,7 +89,7 @@
   <div id="app" class="relative max-w-md mx-auto min-h-screen flex flex-col justify-between overflow-x-hidden">
     
     <!-- Top App Bar -->
-    <header class="fixed top-0 max-w-md w-full z-50 bg-surface/70 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-5 h-16">
+    <header class="fixed top-0 max-w-md w-full z-40 bg-surface/70 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-5 h-16">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-primary fill-icon">coffee_maker</span>
         <h1 class="font-display font-bold text-xl text-primary tracking-tight">PourOver Pro</h1>
@@ -99,8 +98,8 @@
         <button id="btn-sound-toggle" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
           <span class="material-symbols-outlined" id="sound-icon">volume_up</span>
         </button>
-        <button id="btn-settings" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
-          <span class="material-symbols-outlined">settings</span>
+        <button id="btn-open-add-modal" class="p-2 text-primary hover:brightness-125 transition-all flex items-center gap-1 font-mono text-xs font-bold">
+          <span class="material-symbols-outlined text-xl">add_circle</span> 레시피 추가
         </button>
       </div>
     </header>
@@ -108,9 +107,14 @@
     <!-- VIEW 1: CALCULATOR VIEW -->
     <div id="view-calculator" class="flex-grow pt-20 pb-36 px-5 flex flex-col gap-5 transition-opacity duration-300">
       
-      <!-- Recipe Selector Dropdown -->
+      <!-- Recipe Selector Dropdown Header -->
       <div class="flex flex-col gap-2">
-        <label class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Selected Recipe</label>
+        <div class="flex justify-between items-center">
+          <label class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Selected Recipe</label>
+          <button id="btn-delete-recipe" class="hidden text-error hover:underline font-mono text-[11px] flex items-center gap-0.5">
+            <span class="material-symbols-outlined text-sm">delete</span> 삭제
+          </button>
+        </div>
         <div class="relative">
           <select id="recipe-select" class="w-full glass-card rounded-xl p-4 pr-10 appearance-none font-display font-semibold text-lg text-primary bg-transparent focus:outline-none focus:border-primary/50 cursor-pointer">
             <!-- Dynamic Recipe Options -->
@@ -156,7 +160,7 @@
       <div id="warning-banner" class="hidden bg-primary-container/15 border border-primary-container/40 rounded-xl p-3.5 flex items-start gap-3">
         <span class="material-symbols-outlined text-primary-container shrink-0 text-xl">warning</span>
         <p class="font-body text-xs text-on-surface leading-relaxed">
-          원두량이 기준치보다 늘어났습니다. 커피층 지연 방지를 위해 <span id="warning-grind-text" class="font-bold text-primary">분쇄도를 +1클릭 굵게</span> 조절하세요.
+          원두량이 기준치보다 변동되었습니다. 커피층 지연 방지를 위해 <span id="warning-grind-text" class="font-bold text-primary">분쇄도를 조절</span>하세요.
         </p>
       </div>
 
@@ -225,7 +229,7 @@
           </h2>
         </div>
 
-        <!-- Scale Target Display (Crucial UX) -->
+        <!-- Scale Target Display -->
         <div class="glass-card px-6 py-4 rounded-2xl border-brew-amber/30 w-full max-w-xs shadow-xl">
           <p class="font-mono text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">Target Scale Weight (저울 목표 중량)</p>
           <div class="flex items-baseline justify-center gap-1.5">
@@ -283,10 +287,68 @@
 
     </div>
 
+    <!-- MODAL: ADD CUSTOM RECIPE -->
+    <div id="modal-add-recipe" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div class="glass-card rounded-2xl p-6 w-full max-w-sm border border-primary/30 my-8 shadow-2xl flex flex-col gap-4">
+        
+        <div class="flex justify-between items-center border-b border-white/10 pb-3">
+          <h3 class="font-display font-bold text-lg text-primary flex items-center gap-1.5">
+            <span class="material-symbols-outlined">edit_note</span> 나만의 레시피 추가
+          </h3>
+          <button id="btn-close-modal" class="text-on-surface-variant hover:text-white">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <form id="form-add-recipe" class="flex flex-col gap-3">
+          <div>
+            <label class="font-mono text-xs text-on-surface-variant block mb-1">레시피 이름 *</label>
+            <input type="text" id="new-recipe-name" required placeholder="예: 에티오피아 단맛 레시피" class="w-full bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-display text-sm text-white focus:outline-none focus:border-primary"/>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="font-mono text-xs text-on-surface-variant block mb-1">기준 원두량 (g) *</label>
+              <input type="number" id="new-base-bean" required step="0.5" value="15.0" min="5" max="100" class="w-full bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-mono text-sm text-white focus:outline-none focus:border-primary"/>
+            </div>
+            <div>
+              <label class="font-mono text-xs text-on-surface-variant block mb-1">추출 비율 (예: 1:15)</label>
+              <input type="text" id="new-ratio-text" value="1:15" class="w-full bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-mono text-sm text-white focus:outline-none focus:border-primary"/>
+            </div>
+          </div>
+
+          <div>
+            <label class="font-mono text-xs text-on-surface-variant block mb-1">추천 분쇄도</label>
+            <input type="text" id="new-grind-size" placeholder="예: 코만단테 25클릭" class="w-full bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-display text-sm text-white focus:outline-none focus:border-primary"/>
+          </div>
+
+          <!-- Stage Builder -->
+          <div class="border-t border-white/10 pt-3">
+            <div class="flex justify-between items-center mb-2">
+              <label class="font-mono text-xs text-primary font-bold uppercase tracking-wider">단계별 주입 설정 (Stages)</label>
+              <button type="button" id="btn-add-stage-row" class="text-primary hover:underline font-mono text-xs flex items-center gap-0.5">
+                <span class="material-symbols-outlined text-sm">add</span> 단계 추가
+              </button>
+            </div>
+
+            <div id="modal-stages-container" class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+              <!-- Dynamic Stage Rows -->
+            </div>
+          </div>
+
+          <div class="flex gap-2 border-t border-white/10 pt-4 mt-2">
+            <button type="button" id="btn-cancel-modal" class="flex-1 py-3 rounded-xl bg-surface-container-highest text-on-surface-variant font-display font-semibold text-sm">취소</button>
+            <button type="submit" class="flex-1 py-3 rounded-xl bg-primary-container text-on-primary font-display font-bold text-sm shadow-md">저장하기</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
     <!-- BOTTOM ACTION BUTTONS -->
 
     <!-- Calculator Start FAB -->
-    <div id="calculator-action-bar" class="fixed bottom-20 left-0 w-full max-w-md left-1/2 -translate-x-1/2 px-5 z-40">
+    <div id="calculator-action-bar" class="fixed bottom-20 left-0 w-full max-w-md left-1/2 -translate-x-1/2 px-5 z-30">
       <button id="btn-start-brew" class="w-full bg-primary-container text-on-primary py-4 rounded-xl font-display font-bold text-lg shadow-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
         <span class="material-symbols-outlined fill-icon text-2xl">play_arrow</span>
         Start Brewing Timer
@@ -294,7 +356,7 @@
     </div>
 
     <!-- Timer Control Bar -->
-    <footer id="timer-control-bar" class="hidden fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/10 px-6 pb-8 pt-3">
+    <footer id="timer-control-bar" class="hidden fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/10 px-6 pb-8 pt-3">
       <div class="flex items-center justify-between gap-4">
         <!-- Stop Button -->
         <button id="btn-timer-stop" class="flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-error transition-all active:scale-95">
@@ -320,8 +382,8 @@
       </div>
     </footer>
 
-    <!-- Bottom Navigation Shell (Calculator Mode) -->
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-30 bg-surface/80 backdrop-blur-2xl border-t border-white/10 flex justify-around items-center px-4 pb-5 pt-2">
+    <!-- Bottom Navigation Shell -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-20 bg-surface/80 backdrop-blur-2xl border-t border-white/10 flex justify-around items-center px-4 pb-5 pt-2">
       <button class="flex flex-col items-center justify-center text-primary font-bold">
         <span class="material-symbols-outlined fill-icon">calculate</span>
         <span class="font-mono text-[10px] mt-0.5">Calculator</span>
@@ -346,8 +408,8 @@
 
   <!-- APPLICATION LOGIC -->
   <script>
-    // --- PRESET RECIPES DATA ---
-    const RECIPES = [
+    // --- PRESET DEFAULT RECIPES ---
+    const DEFAULT_RECIPES = [
       {
         id: "kasuya_46",
         name: "하리오 V60 4:6 (카스야 테츠)",
@@ -355,7 +417,7 @@
         grindBase: "코만단테 27클릭 (굵게)",
         type: "hot",
         ratioText: "1:15",
-        icePercent: 0, // % of total water replaced by ice if ICE selected
+        isCustom: false,
         stages: [
           { step: 1, name: "1차 주입 (산미)", water: 60, temp: 92, time: 45, switch: "open" },
           { step: 2, name: "2차 주입 (단맛)", water: 60, temp: 92, time: 45, switch: "open" },
@@ -371,7 +433,7 @@
         grindBase: "코만단테 24클릭 (중굵게)",
         type: "hot",
         ratioText: "1:14",
-        icePercent: 0,
+        isCustom: false,
         stages: [
           { step: 1, name: "1차 투과 주입", water: 60, temp: 93, time: 45, switch: "open" },
           { step: 2, name: "2차 투과 주입", water: 60, temp: 93, time: 45, switch: "open" },
@@ -383,10 +445,10 @@
         id: "james_hoffmann_v60",
         name: "제임스 호프만 Ultimate V60",
         baseBeanWeight: 15,
-        grindBase: "코만단테 18클릭 (중중미세)",
+        grindBase: "코만단테 18클릭 (중미세)",
         type: "hot",
         ratioText: "1:16.6",
-        icePercent: 0,
+        isCustom: false,
         stages: [
           { step: 1, name: "뜸들이기 (Bloom)", water: 50, temp: 95, time: 45, switch: "open" },
           { step: 2, name: "1차 메인 주입 (60%)", water: 100, temp: 95, time: 30, switch: "open" },
@@ -401,7 +463,7 @@
         grindBase: "코만단테 22클릭 (중간)",
         type: "ice",
         ratioText: "1:15",
-        icePercent: 40, // 40% of total water volume is ice in server
+        isCustom: false,
         stages: [
           { step: 1, name: "1차 뜸들이기", water: 40, temp: 94, time: 45, switch: "open" },
           { step: 2, name: "2차 주입", water: 60, temp: 94, time: 45, switch: "open" },
@@ -410,8 +472,12 @@
       }
     ];
 
+    // LOCAL STORAGE KEY
+    const STORAGE_KEY = "POUROVER_PRO_CUSTOM_RECIPES";
+
     // --- STATE MANAGEMENT ---
-    let currentRecipe = RECIPES[0];
+    let allRecipes = [];
+    let currentRecipe = null;
     let currentBeanWeight = 15.0;
     let isIceMode = false;
     let soundEnabled = true;
@@ -427,7 +493,7 @@
     let scaledIceWeight = 0;
     let scaledTotalWater = 0;
 
-    // Web Audio Synthesizer for Beep
+    // Web Audio Synthesizer
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 880, duration = 0.15, type = 'sine') {
       if (!soundEnabled) return;
@@ -446,28 +512,71 @@
         osc.start();
         osc.stop(audioCtx.currentTime + duration);
       } catch (e) {
-        console.log('Audio play error:', e);
+        console.log('Audio error:', e);
       }
     }
 
     // --- INITIALIZATION ---
     document.addEventListener("DOMContentLoaded", () => {
-      initRecipeSelect();
+      loadRecipesFromStorage();
       bindEvents();
       calculateAndRender();
     });
 
-    function initRecipeSelect() {
+    function loadRecipesFromStorage() {
+      let customRecipes = [];
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          customRecipes = JSON.parse(stored);
+        }
+      } catch (e) {
+        console.error("Failed to parse custom recipes:", e);
+      }
+
+      allRecipes = [...DEFAULT_RECIPES, ...customRecipes];
+      currentRecipe = allRecipes[0];
+      currentBeanWeight = currentRecipe.baseBeanWeight;
+      isIceMode = currentRecipe.type === "ice";
+
+      renderRecipeDropdown();
+    }
+
+    function saveCustomRecipesToStorage(customOnlyList) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(customOnlyList));
+      } catch (e) {
+        console.error("Failed to save custom recipes:", e);
+      }
+    }
+
+    function renderRecipeDropdown() {
       const select = document.getElementById("recipe-select");
-      select.innerHTML = RECIPES.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
-      select.value = currentRecipe.id;
+      select.innerHTML = allRecipes.map(r => `
+        <option value="${r.id}">${r.isCustom ? '⭐ ' : ''}${r.name}</option>
+      `).join("");
+
+      if (currentRecipe) {
+        select.value = currentRecipe.id;
+      }
+      updateDeleteButtonVisibility();
+    }
+
+    function updateDeleteButtonVisibility() {
+      const btnDelete = document.getElementById("btn-delete-recipe");
+      if (currentRecipe && currentRecipe.isCustom) {
+        btnDelete.classList.remove("hidden");
+      } else {
+        btnDelete.classList.add("hidden");
+      }
     }
 
     // --- CORE SCALER CALCULATION LOGIC ---
     function calculateAndRender() {
+      if (!currentRecipe) return;
+
       const ratio = currentBeanWeight / currentRecipe.baseBeanWeight;
       
-      // Calculate scaled stages
       let cumuScaleTarget = 0;
       scaledStages = currentRecipe.stages.map(st => {
         const scaledWater = Math.round(st.water * ratio);
@@ -479,11 +588,9 @@
         };
       });
 
-      // Total liquid calculations
       const rawTotalWater = Math.round(currentRecipe.stages.reduce((acc, s) => acc + s.water, 0) * ratio);
       
       if (isIceMode) {
-        // Ice mode: 35% of total volume is ice in server
         scaledIceWeight = Math.round(rawTotalWater * 0.35);
         scaledTotalWater = rawTotalWater - scaledIceWeight;
       } else {
@@ -491,7 +598,6 @@
         scaledTotalWater = rawTotalWater;
       }
 
-      // Grind & Warning Logic
       const beanRatioDiff = (currentBeanWeight - currentRecipe.baseBeanWeight) / currentRecipe.baseBeanWeight;
       const warningBanner = document.getElementById("warning-banner");
       const warningText = document.getElementById("warning-grind-text");
@@ -506,21 +612,18 @@
         warningBanner.classList.add("hidden");
       }
 
-      // Render Calculator UI
       document.getElementById("input-bean-weight").value = currentBeanWeight.toFixed(1);
-      document.getElementById("ratio-badge").textContent = `${currentRecipe.ratioText} Ratio`;
+      document.getElementById("ratio-badge").textContent = `${currentRecipe.ratioText || '1:15'} Ratio`;
       document.getElementById("total-water-display").textContent = `${scaledTotalWater + scaledIceWeight}g`;
       document.getElementById("ice-weight-display").textContent = `${scaledIceWeight}g`;
       document.getElementById("ice-badge").textContent = isIceMode ? "ICE" : "HOT";
-      document.getElementById("grind-display").textContent = currentRecipe.grindBase;
+      document.getElementById("grind-display").textContent = currentRecipe.grindBase || "코만단테 24클릭";
 
-      // Calculate Total Time
       const totalTimeSec = scaledStages.reduce((acc, s) => acc + s.time, 0);
       const mins = Math.floor(totalTimeSec / 60);
       const secs = totalTimeSec % 60;
       document.getElementById("total-time-display").textContent = `Total Time: ${mins}:${secs.toString().padStart(2, '0')}`;
 
-      // Render Sequence Cards
       const container = document.getElementById("step-list-container");
       container.innerHTML = scaledStages.map((st, idx) => `
         <div class="glass-card ${idx === 0 ? 'active-step-card' : 'opacity-70'} rounded-xl p-4 flex flex-col gap-2.5">
@@ -552,16 +655,27 @@
 
     // --- EVENT BINDINGS ---
     function bindEvents() {
-      // Recipe select
       document.getElementById("recipe-select").addEventListener("change", (e) => {
-        currentRecipe = RECIPES.find(r => r.id === e.target.value) || RECIPES[0];
+        currentRecipe = allRecipes.find(r => r.id === e.target.value) || allRecipes[0];
         currentBeanWeight = currentRecipe.baseBeanWeight;
         isIceMode = currentRecipe.type === "ice";
         updateHotIceButtons();
+        updateDeleteButtonVisibility();
         calculateAndRender();
       });
 
-      // Bean stepper
+      // Delete Custom Recipe
+      document.getElementById("btn-delete-recipe").addEventListener("click", () => {
+        if (!currentRecipe || !currentRecipe.isCustom) return;
+        if (confirm(`'${currentRecipe.name}' 레시피를 삭제하시겠습니까?`)) {
+          const customOnly = allRecipes.filter(r => r.isCustom && r.id !== currentRecipe.id);
+          saveCustomRecipesToStorage(customOnly);
+          loadRecipesFromStorage();
+          calculateAndRender();
+        }
+      });
+
+      // Bean Stepper
       document.getElementById("btn-bean-minus").addEventListener("click", () => {
         if (currentBeanWeight > 5) {
           currentBeanWeight -= 0.5;
@@ -597,18 +711,140 @@
         calculateAndRender();
       });
 
-      // Sound toggle
+      // Sound Toggle
       document.getElementById("btn-sound-toggle").addEventListener("click", () => {
         soundEnabled = !soundEnabled;
         document.getElementById("sound-icon").textContent = soundEnabled ? "volume_up" : "volume_off";
         playBeep(1000, 0.1);
       });
 
+      // Modal Events
+      document.getElementById("btn-open-add-modal").addEventListener("click", openAddRecipeModal);
+      document.getElementById("btn-close-modal").addEventListener("click", closeAddRecipeModal);
+      document.getElementById("btn-cancel-modal").addEventListener("click", closeAddRecipeModal);
+      document.getElementById("btn-add-stage-row").addEventListener("click", addStageRowInModal);
+      document.getElementById("form-add-recipe").addEventListener("submit", handleAddRecipeSubmit);
+
       // View Navigation
       document.getElementById("btn-start-brew").addEventListener("click", startTimerView);
       document.getElementById("btn-timer-stop").addEventListener("click", stopTimerView);
       document.getElementById("btn-timer-toggle").addEventListener("click", toggleTimerPlayPause);
       document.getElementById("btn-timer-skip").addEventListener("click", skipToNextStep);
+    }
+
+    // --- MODAL & CUSTOM RECIPE BUILDER ---
+    function openAddRecipeModal() {
+      document.getElementById("modal-add-recipe").classList.remove("hidden");
+      // Reset Stage Rows in Modal (Default 3 stages)
+      const container = document.getElementById("modal-stages-container");
+      container.innerHTML = "";
+      addStageRowInModal("1차 뜸들이기", 40, 92, 45, "open");
+      addStageRowInModal("2차 메인 주입", 80, 92, 45, "open");
+      addStageRowInModal("3차 마무리 주입", 80, 90, 45, "open");
+    }
+
+    function closeAddRecipeModal() {
+      document.getElementById("modal-add-recipe").classList.add("hidden");
+    }
+
+    function addStageRowInModal(defaultName = "", defaultWater = 50, defaultTemp = 92, defaultTime = 45, defaultSwitch = "open") {
+      const container = document.getElementById("modal-stages-container");
+      const index = container.children.length + 1;
+      const row = document.createElement("div");
+      row.className = "stage-builder-row bg-surface-container border border-white/5 rounded-xl p-2.5 flex flex-col gap-2 relative";
+      row.innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="font-mono text-[11px] text-primary font-bold">Step ${index}</span>
+          <button type="button" class="btn-remove-stage-row text-error hover:text-white font-mono text-[10px]">삭제</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" class="stage-name bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs text-white" placeholder="단계 이름" value="${defaultName || '주입 ' + index}"/>
+          <input type="number" class="stage-water bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs font-mono text-white" placeholder="물량(g)" value="${defaultWater}"/>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <div>
+            <span class="font-mono text-[9px] text-on-surface-variant block">온도(°C)</span>
+            <input type="number" class="stage-temp bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTemp}"/>
+          </div>
+          <div>
+            <span class="font-mono text-[9px] text-on-surface-variant block">시간(초)</span>
+            <input type="number" class="stage-time bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTime}"/>
+          </div>
+          <div>
+            <span class="font-mono text-[9px] text-on-surface-variant block">스위치</span>
+            <select class="stage-switch bg-surface-container-highest border border-white/5 rounded-lg px-1 py-1 text-xs font-mono text-white">
+              <option value="open" ${defaultSwitch === 'open' ? 'selected' : ''}>OPEN</option>
+              <option value="closed" ${defaultSwitch === 'closed' ? 'selected' : ''}>CLOSED</option>
+            </select>
+          </div>
+        </div>
+      `;
+
+      row.querySelector(".btn-remove-stage-row").addEventListener("click", () => {
+        if (container.children.length > 1) {
+          row.remove();
+        } else {
+          alert("최소 1개의 단계는 필요합니다.");
+        }
+      });
+
+      container.appendChild(row);
+    }
+
+    function handleAddRecipeSubmit(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById("new-recipe-name").value.trim();
+      const baseBeanWeight = parseFloat(document.getElementById("new-base-bean").value) || 15;
+      const ratioText = document.getElementById("new-ratio-text").value.trim() || "1:15";
+      const grindBase = document.getElementById("new-grind-size").value.trim() || "코만단테 24클릭";
+
+      // Parse Stage Rows
+      const rows = document.querySelectorAll(".stage-builder-row");
+      const stages = [];
+      rows.forEach((row, i) => {
+        stages.push({
+          step: i + 1,
+          name: row.querySelector(".stage-name").value.trim() || `Step ${i + 1}`,
+          water: parseFloat(row.querySelector(".stage-water").value) || 50,
+          temp: parseInt(row.querySelector(".stage-temp").value) || 92,
+          time: parseInt(row.querySelector(".stage-time").value) || 45,
+          switch: row.querySelector(".stage-switch").value
+        });
+      });
+
+      if (stages.length === 0) {
+        alert("최소 1개 이상의 추출 단계를 추가해주세요.");
+        return;
+      }
+
+      // Build New Custom Recipe Object
+      const newRecipe = {
+        id: "custom_" + Date.now(),
+        name: name,
+        baseBeanWeight: baseBeanWeight,
+        grindBase: grindBase,
+        type: "hot",
+        ratioText: ratioText,
+        isCustom: true,
+        stages: stages
+      };
+
+      // Get existing custom recipes
+      const existingCustom = allRecipes.filter(r => r.isCustom);
+      const updatedCustom = [...existingCustom, newRecipe];
+
+      saveCustomRecipesToStorage(updatedCustom);
+      loadRecipesFromStorage();
+
+      // Select newly created recipe
+      currentRecipe = newRecipe;
+      currentBeanWeight = newRecipe.baseBeanWeight;
+      renderRecipeDropdown();
+      calculateAndRender();
+
+      closeAddRecipeModal();
+      playBeep(1200, 0.2);
     }
 
     function updateHotIceButtons() {
@@ -625,10 +861,8 @@
 
     // --- TIMER ENGINE & LIVE VIEW ---
     function startTimerView() {
-      // Request Screen WakeLock so mobile display won't sleep during drip
       requestWakeLock();
 
-      // Switch UI to Timer View
       document.getElementById("view-calculator").classList.add("hidden");
       document.getElementById("calculator-action-bar").classList.add("hidden");
       document.getElementById("bottom-nav").classList.add("hidden");
@@ -636,7 +870,6 @@
       document.getElementById("view-timer").classList.remove("hidden");
       document.getElementById("timer-control-bar").classList.remove("hidden");
 
-      // Reset timer counters
       totalSecondsElapsed = 0;
       currentStepIndex = 0;
       stepTimeRemaining = scaledStages[0].time;
@@ -650,7 +883,6 @@
       clearInterval(timerInterval);
       timerRunning = false;
 
-      // Switch UI back to Calculator View
       document.getElementById("view-timer").classList.add("hidden");
       document.getElementById("timer-control-bar").classList.add("hidden");
 
@@ -662,27 +894,24 @@
     function startTimerInterval() {
       timerRunning = true;
       updatePlayPauseButtonUI();
-      playBeep(880, 0.2); // Start beep
+      playBeep(880, 0.2);
 
       timerInterval = setInterval(() => {
         totalSecondsElapsed++;
         stepTimeRemaining--;
 
-        // Audio Beep countdown at 3, 2, 1 seconds
         if (stepTimeRemaining <= 3 && stepTimeRemaining > 0) {
           playBeep(600, 0.1);
           if (navigator.vibrate) navigator.vibrate(100);
         }
 
         if (stepTimeRemaining <= 0) {
-          // Move to next step
           currentStepIndex++;
           if (currentStepIndex < scaledStages.length) {
             stepTimeRemaining = scaledStages[currentStepIndex].time;
-            playBeep(1200, 0.3); // High beep for step transition
+            playBeep(1200, 0.3);
             if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
           } else {
-            // Completed!
             finishBrewing();
             return;
           }
@@ -750,27 +979,22 @@
       const st = scaledStages[currentStepIndex];
       const totalSteps = scaledStages.length;
 
-      // Timer Display Formatter
       const mins = Math.floor(totalSecondsElapsed / 60);
       const secs = totalSecondsElapsed % 60;
       document.getElementById("timer-display").textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
-      // Progress Bar
       const progressPct = Math.min(100, Math.round(((currentStepIndex + 1) / totalSteps) * 100));
       document.getElementById("timer-progress-bar").style.width = `${progressPct}%`;
       document.getElementById("timer-step-counter").textContent = `Step ${currentStepIndex + 1} of ${totalSteps}`;
 
-      // Scale Target (Cumulative)
       document.getElementById("timer-target-scale").textContent = st.cumulativeTarget;
       document.getElementById("timer-step-water").textContent = `+${st.scaledWater}g`;
 
-      // Step Detail
       document.getElementById("timer-step-title").textContent = `STEP ${st.step.toString().padStart(2, '0')} (${st.name})`;
       document.getElementById("timer-instruction").innerHTML = `Pour <span class="text-brew-green font-black">+${st.scaledWater}g</span> Water now`;
       document.getElementById("timer-step-temp").textContent = `${st.temp}°C`;
       document.getElementById("timer-step-switch").textContent = `Switch ${st.switch.toUpperCase()}`;
 
-      // Next Step Preview
       if (currentStepIndex < totalSteps - 1) {
         const nextSt = scaledStages[currentStepIndex + 1];
         document.getElementById("timer-next-label").textContent = `Next: Step ${nextSt.step}`;
@@ -783,14 +1007,14 @@
       }
     }
 
-    // --- WAKE LOCK API (Screen Keep Awake) ---
+    // --- WAKE LOCK API ---
     async function requestWakeLock() {
       try {
         if ('wakeLock' in navigator) {
           wakeLock = await navigator.wakeLock.request('screen');
         }
       } catch (err) {
-        console.log('Wake lock request failed:', err);
+        console.log('Wake lock failed:', err);
       }
     }
 

@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html class="dark" lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+  <title>PourOver Pro - 커피 드립 계산기 & 타이머</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#121416",
+            "surface-dim": "#121416",
+            "surface-container": "#1e2022",
+            "surface-container-high": "#282a2c",
+            "surface-container-highest": "#333537",
+            "surface-variant": "#333537",
+            "primary": "#ffc664",
+            "primary-container": "#e5a93b",
+            "on-primary": "#432c00",
+            "on-surface": "#e2e2e5",
+            "on-surface-variant": "#d4c4af",
+            "tertiary": "#aed2ff",
+            "error": "#ffb4ab",
+            "brew-green": "#00E676",
+            "brew-amber": "#E5A93B"
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #111315;
+      color: #e2e2e5;
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .glass-card {
+      background: rgba(30, 32, 34, 0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .active-step-card {
+      border-left: 4px solid #e5a93b;
+      background: rgba(229, 169, 59, 0.12);
+    }
+    .active-step-border {
+      border: 2px solid #00E676;
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.25);
+    }
+    .progress-glow {
+      box-shadow: 0 0 12px rgba(229, 169, 59, 0.5);
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .fill-icon {
+      font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Hide scrollbars for clean app feel */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-brew-amber/30">
+
+  <!-- APP SHELL -->
+  <div id="app" class="relative max-w-md mx-auto min-h-screen flex flex-col justify-between overflow-x-hidden">
+    
+    <!-- Top App Bar -->
+    <header class="fixed top-0 max-w-md w-full z-50 bg-surface/70 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-5 h-16">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary fill-icon">coffee_maker</span>
+        <h1 class="font-display font-bold text-xl text-primary tracking-tight">PourOver Pro</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btn-sound-toggle" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+          <span class="material-symbols-outlined" id="sound-icon">volume_up</span>
+        </button>
+        <button id="btn-settings" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- VIEW 1: CALCULATOR VIEW -->
+    <div id="view-calculator" class="flex-grow pt-20 pb-36 px-5 flex flex-col gap-5 transition-opacity duration-300">
+      
+      <!-- Recipe Selector Dropdown -->
+      <div class="flex flex-col gap-2">
+        <label class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Selected Recipe</label>
+        <div class="relative">
+          <select id="recipe-select" class="w-full glass-card rounded-xl p-4 pr-10 appearance-none font-display font-semibold text-lg text-primary bg-transparent focus:outline-none focus:border-primary/50 cursor-pointer">
+            <!-- Dynamic Recipe Options -->
+          </select>
+          <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+        </div>
+      </div>
+
+      <!-- Main Input Card: Bean Weight Stepper -->
+      <section class="glass-card rounded-2xl p-6 flex flex-col items-center gap-4 relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-2xl rounded-full"></div>
+        <span class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Coffee Amount (g)</span>
+        
+        <div class="flex items-center justify-between w-full max-w-[280px]">
+          <button id="btn-bean-minus" class="w-13 h-13 rounded-full bg-surface-container-highest flex items-center justify-center text-primary active:scale-90 transition-transform shadow-md">
+            <span class="material-symbols-outlined text-2xl">remove</span>
+          </button>
+          
+          <div class="text-center cursor-pointer" id="bean-weight-display-container">
+            <input type="number" id="input-bean-weight" step="0.5" min="5" max="100" value="15.0" class="w-32 text-center font-display font-black text-5xl text-primary bg-transparent focus:outline-none focus:border-b-2 border-primary/50 p-0 m-0"/>
+            <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+              <span id="ratio-badge" class="font-mono text-xs text-primary font-semibold">1:15 Ratio</span>
+            </div>
+          </div>
+          
+          <button id="btn-bean-plus" class="w-13 h-13 rounded-full bg-surface-container-highest flex items-center justify-center text-primary active:scale-90 transition-transform shadow-md">
+            <span class="material-symbols-outlined text-2xl">add</span>
+          </button>
+        </div>
+
+        <!-- Hot / Ice Toggle -->
+        <div class="w-full flex rounded-xl bg-surface-container-highest/60 p-1 border border-white/5 mt-2">
+          <button id="btn-type-hot" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm">
+            <span class="material-symbols-outlined text-sm">local_cafe</span> HOT
+          </button>
+          <button id="btn-type-ice" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface">
+            <span class="material-symbols-outlined text-sm">ac_unit</span> ICE
+          </button>
+        </div>
+      </section>
+
+      <!-- Warning Banner (Conditional) -->
+      <div id="warning-banner" class="hidden bg-primary-container/15 border border-primary-container/40 rounded-xl p-3.5 flex items-start gap-3">
+        <span class="material-symbols-outlined text-primary-container shrink-0 text-xl">warning</span>
+        <p class="font-body text-xs text-on-surface leading-relaxed">
+          원두량이 기준치보다 늘어났습니다. 커피층 지연 방지를 위해 <span id="warning-grind-text" class="font-bold text-primary">분쇄도를 +1클릭 굵게</span> 조절하세요.
+        </p>
+      </div>
+
+      <!-- Summary Grid -->
+      <section class="grid grid-cols-2 gap-3">
+        <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+          <span class="font-mono text-xs text-on-surface-variant uppercase">Total Water</span>
+          <span id="total-water-display" class="font-display font-bold text-2xl text-primary">225g</span>
+        </div>
+        
+        <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+          <span class="font-mono text-xs text-on-surface-variant uppercase">Ice Weight</span>
+          <div class="flex items-baseline gap-1.5">
+            <span id="ice-weight-display" class="font-display font-bold text-2xl text-on-surface">0g</span>
+            <span id="ice-badge" class="font-mono text-[10px] text-on-surface-variant opacity-60">HOT</span>
+          </div>
+        </div>
+        
+        <div class="glass-card rounded-xl p-4 flex flex-col gap-1 col-span-2">
+          <span class="font-mono text-xs text-on-surface-variant uppercase">Recommended Grind</span>
+          <div class="flex items-center justify-between">
+            <span id="grind-display" class="font-display font-semibold text-lg text-primary">코만단테 27클릭</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-base">tune</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step Breakdown List -->
+      <section class="flex flex-col gap-3">
+        <div class="flex justify-between items-center px-1">
+          <h3 class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Brew Sequence</h3>
+          <span id="total-time-display" class="font-mono text-xs text-primary">Total Time: 03:30</span>
+        </div>
+
+        <div id="step-list-container" class="flex flex-col gap-2.5">
+          <!-- Dynamic Step Cards -->
+        </div>
+      </section>
+
+    </div>
+
+    <!-- VIEW 2: LIVE TIMER VIEW -->
+    <div id="view-timer" class="hidden flex-grow pt-20 pb-32 px-5 flex flex-col justify-between transition-opacity duration-300">
+      
+      <!-- Top Progress Indicator -->
+      <section class="mt-2 mb-3">
+        <div class="flex justify-between items-end mb-2">
+          <p class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Extraction Progress</p>
+          <p id="timer-step-counter" class="font-mono text-xs text-primary font-bold">Step 1 of 5</p>
+        </div>
+        <div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+          <div id="timer-progress-bar" class="h-full bg-primary-container progress-glow transition-all duration-300 ease-out" style="width: 20%"></div>
+        </div>
+      </section>
+
+      <!-- Hero Timer & Scale Target Section -->
+      <section class="flex-grow flex flex-col items-center justify-center text-center my-4">
+        <div class="mb-2">
+          <span id="timer-status-badge" class="font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow">READY</span>
+        </div>
+        
+        <!-- Huge Timer Display -->
+        <div class="mb-4">
+          <h2 id="timer-display" class="text-[76px] leading-none font-display font-black text-brew-green tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(0,230,118,0.3)]">
+            00:00
+          </h2>
+        </div>
+
+        <!-- Scale Target Display (Crucial UX) -->
+        <div class="glass-card px-6 py-4 rounded-2xl border-brew-amber/30 w-full max-w-xs shadow-xl">
+          <p class="font-mono text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">Target Scale Weight (저울 목표 중량)</p>
+          <div class="flex items-baseline justify-center gap-1.5">
+            <span id="timer-target-scale" class="text-4xl font-display font-black text-brew-amber tabular-nums">45</span>
+            <span class="text-lg font-mono text-brew-amber/70 font-bold">g</span>
+          </div>
+          <p id="timer-step-pour-desc" class="text-xs text-on-surface-variant mt-1.5 border-t border-white/5 pt-1">
+            이번 단계: <span id="timer-step-water" class="text-primary font-bold">+45g</span> 주입
+          </p>
+        </div>
+      </section>
+
+      <!-- Contextual Active Step Card -->
+      <section class="mb-4">
+        <div id="timer-active-card" class="glass-card active-step-border p-5 rounded-2xl relative overflow-hidden">
+          <div class="absolute -right-4 -top-4 w-24 h-24 bg-brew-green/10 blur-3xl rounded-full"></div>
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1.5">
+                <span class="w-2 h-2 rounded-full bg-brew-green animate-pulse"></span>
+                <span id="timer-step-title" class="font-mono text-xs text-brew-green font-bold">STEP 01 (BLOOM)</span>
+              </div>
+              
+              <h3 id="timer-instruction" class="font-display text-xl font-bold text-on-surface leading-tight mb-3">
+                <span id="timer-pour-amount" class="text-brew-green font-black">45g</span> 물을 주입하세요
+              </h3>
+              
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1.5 text-on-surface-variant">
+                  <span class="material-symbols-outlined text-base">thermostat</span>
+                  <span id="timer-step-temp" class="font-mono text-xs">92°C</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-brew-green">
+                  <span class="material-symbols-outlined text-base">valve</span>
+                  <span id="timer-step-switch" class="font-mono text-xs uppercase font-bold">Switch OPEN</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Next Step Preview Card -->
+      <section class="mb-2">
+        <div class="glass-card p-4 rounded-xl opacity-70 border border-white/5">
+          <div class="flex justify-between items-center">
+            <div class="flex flex-col">
+              <span id="timer-next-label" class="font-mono text-[10px] text-on-surface-variant uppercase mb-0.5">Next: Step 2</span>
+              <p id="timer-next-desc" class="font-body text-sm font-medium text-on-surface">Pour 45g Water</p>
+            </div>
+            <span id="timer-next-time" class="font-mono text-xs text-on-surface-variant">at 00:45</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- BOTTOM ACTION BUTTONS -->
+
+    <!-- Calculator Start FAB -->
+    <div id="calculator-action-bar" class="fixed bottom-20 left-0 w-full max-w-md left-1/2 -translate-x-1/2 px-5 z-40">
+      <button id="btn-start-brew" class="w-full bg-primary-container text-on-primary py-4 rounded-xl font-display font-bold text-lg shadow-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+        <span class="material-symbols-outlined fill-icon text-2xl">play_arrow</span>
+        Start Brewing Timer
+      </button>
+    </div>
+
+    <!-- Timer Control Bar -->
+    <footer id="timer-control-bar" class="hidden fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/10 px-6 pb-8 pt-3">
+      <div class="flex items-center justify-between gap-4">
+        <!-- Stop Button -->
+        <button id="btn-timer-stop" class="flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-error transition-all active:scale-95">
+          <div class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-container-highest mb-1">
+            <span class="material-symbols-outlined">stop</span>
+          </div>
+          <span class="text-[11px] font-mono">Stop</span>
+        </button>
+        
+        <!-- Play / Pause Main Button -->
+        <button id="btn-timer-toggle" class="flex-grow flex items-center justify-center gap-2 bg-brew-amber text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-amber/20 active:scale-[0.98] transition-all">
+          <span class="material-symbols-outlined fill-icon" id="timer-toggle-icon">pause</span>
+          <span id="timer-toggle-text" class="uppercase tracking-widest text-sm">Pause Brew</span>
+        </button>
+
+        <!-- Skip Step Button -->
+        <button id="btn-timer-skip" class="flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-primary transition-all active:scale-95">
+          <div class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-container-highest mb-1">
+            <span class="material-symbols-outlined">skip_next</span>
+          </div>
+          <span class="text-[11px] font-mono">Skip</span>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Bottom Navigation Shell (Calculator Mode) -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-30 bg-surface/80 backdrop-blur-2xl border-t border-white/10 flex justify-around items-center px-4 pb-5 pt-2">
+      <button class="flex flex-col items-center justify-center text-primary font-bold">
+        <span class="material-symbols-outlined fill-icon">calculate</span>
+        <span class="font-mono text-[10px] mt-0.5">Calculator</span>
+      </button>
+      <button id="nav-recipes" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">menu_book</span>
+        <span class="font-mono text-[10px] mt-0.5">Recipes</span>
+      </button>
+      <button id="nav-logs" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+        <span class="material-symbols-outlined">history</span>
+        <span class="font-mono text-[10px] mt-0.5">Logs</span>
+      </button>
+    </nav>
+
+    <!-- Background Atmospheric Glows -->
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+      <div class="absolute top-[-10%] right-[-10%] w-[60%] h-[50%] bg-primary/10 blur-[130px] rounded-full"></div>
+      <div class="absolute bottom-[-10%] left-[-10%] w-[60%] h-[50%] bg-tertiary/5 blur-[130px] rounded-full"></div>
+    </div>
+
+  </div>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    // --- PRESET RECIPES DATA ---
+    const RECIPES = [
+      {
+        id: "kasuya_46",
+        name: "하리오 V60 4:6 (카스야 테츠)",
+        baseBeanWeight: 20,
+        grindBase: "코만단테 27클릭 (굵게)",
+        type: "hot",
+        ratioText: "1:15",
+        icePercent: 0, // % of total water replaced by ice if ICE selected
+        stages: [
+          { step: 1, name: "1차 주입 (산미)", water: 60, temp: 92, time: 45, switch: "open" },
+          { step: 2, name: "2차 주입 (단맛)", water: 60, temp: 92, time: 45, switch: "open" },
+          { step: 3, name: "3차 주입 (바디감)", water: 45, temp: 90, time: 45, switch: "open" },
+          { step: 4, name: "4차 주입 (농도)", water: 45, temp: 90, time: 45, switch: "open" },
+          { step: 5, name: "5차 주입 (완료)", water: 45, temp: 90, time: 30, switch: "open" }
+        ]
+      },
+      {
+        id: "hario_switch_sweet",
+        name: "하리오 스위치 스위트 레시피",
+        baseBeanWeight: 20,
+        grindBase: "코만단테 24클릭 (중굵게)",
+        type: "hot",
+        ratioText: "1:14",
+        icePercent: 0,
+        stages: [
+          { step: 1, name: "1차 투과 주입", water: 60, temp: 93, time: 45, switch: "open" },
+          { step: 2, name: "2차 투과 주입", water: 60, temp: 93, time: 45, switch: "open" },
+          { step: 3, name: "3차 침출 (스위치 닫음)", water: 80, temp: 70, time: 60, switch: "closed" },
+          { step: 4, name: "스위치 열고 드롭다운", water: 0, temp: 70, time: 40, switch: "open" }
+        ]
+      },
+      {
+        id: "james_hoffmann_v60",
+        name: "제임스 호프만 Ultimate V60",
+        baseBeanWeight: 15,
+        grindBase: "코만단테 18클릭 (중중미세)",
+        type: "hot",
+        ratioText: "1:16.6",
+        icePercent: 0,
+        stages: [
+          { step: 1, name: "뜸들이기 (Bloom)", water: 50, temp: 95, time: 45, switch: "open" },
+          { step: 2, name: "1차 메인 주입 (60%)", water: 100, temp: 95, time: 30, switch: "open" },
+          { step: 3, name: "2차 잔여 주입 (40%)", water: 100, temp: 95, time: 30, switch: "open" },
+          { step: 4, name: "스워링 및 드로우다운", water: 0, temp: 95, time: 75, switch: "open" }
+        ]
+      },
+      {
+        id: "ice_drip_classic",
+        name: "아이스 급랭 드립 (3:7 얼음)",
+        baseBeanWeight: 18,
+        grindBase: "코만단테 22클릭 (중간)",
+        type: "ice",
+        ratioText: "1:15",
+        icePercent: 40, // 40% of total water volume is ice in server
+        stages: [
+          { step: 1, name: "1차 뜸들이기", water: 40, temp: 94, time: 45, switch: "open" },
+          { step: 2, name: "2차 주입", water: 60, temp: 94, time: 45, switch: "open" },
+          { step: 3, name: "3차 주입 및 얼음 추출", water: 62, temp: 92, time: 50, switch: "open" }
+        ]
+      }
+    ];
+
+    // --- STATE MANAGEMENT ---
+    let currentRecipe = RECIPES[0];
+    let currentBeanWeight = 15.0;
+    let isIceMode = false;
+    let soundEnabled = true;
+    let wakeLock = null;
+
+    // Timer State
+    let timerInterval = null;
+    let timerRunning = false;
+    let totalSecondsElapsed = 0;
+    let currentStepIndex = 0;
+    let stepTimeRemaining = 0;
+    let scaledStages = [];
+    let scaledIceWeight = 0;
+    let scaledTotalWater = 0;
+
+    // Web Audio Synthesizer for Beep
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 880, duration = 0.15, type = 'sine') {
+      if (!soundEnabled) return;
+      try {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.log('Audio play error:', e);
+      }
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", () => {
+      initRecipeSelect();
+      bindEvents();
+      calculateAndRender();
+    });
+
+    function initRecipeSelect() {
+      const select = document.getElementById("recipe-select");
+      select.innerHTML = RECIPES.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
+      select.value = currentRecipe.id;
+    }
+
+    // --- CORE SCALER CALCULATION LOGIC ---
+    function calculateAndRender() {
+      const ratio = currentBeanWeight / currentRecipe.baseBeanWeight;
+      
+      // Calculate scaled stages
+      let cumuScaleTarget = 0;
+      scaledStages = currentRecipe.stages.map(st => {
+        const scaledWater = Math.round(st.water * ratio);
+        cumuScaleTarget += scaledWater;
+        return {
+          ...st,
+          scaledWater: scaledWater,
+          cumulativeTarget: cumuScaleTarget
+        };
+      });
+
+      // Total liquid calculations
+      const rawTotalWater = Math.round(currentRecipe.stages.reduce((acc, s) => acc + s.water, 0) * ratio);
+      
+      if (isIceMode) {
+        // Ice mode: 35% of total volume is ice in server
+        scaledIceWeight = Math.round(rawTotalWater * 0.35);
+        scaledTotalWater = rawTotalWater - scaledIceWeight;
+      } else {
+        scaledIceWeight = 0;
+        scaledTotalWater = rawTotalWater;
+      }
+
+      // Grind & Warning Logic
+      const beanRatioDiff = (currentBeanWeight - currentRecipe.baseBeanWeight) / currentRecipe.baseBeanWeight;
+      const warningBanner = document.getElementById("warning-banner");
+      const warningText = document.getElementById("warning-grind-text");
+
+      if (beanRatioDiff >= 0.20) {
+        warningBanner.classList.remove("hidden");
+        warningText.textContent = "분쇄도를 +1~2클릭 굵게";
+      } else if (beanRatioDiff <= -0.20) {
+        warningBanner.classList.remove("hidden");
+        warningText.textContent = "분쇄도를 -1클릭 미세하게";
+      } else {
+        warningBanner.classList.add("hidden");
+      }
+
+      // Render Calculator UI
+      document.getElementById("input-bean-weight").value = currentBeanWeight.toFixed(1);
+      document.getElementById("ratio-badge").textContent = `${currentRecipe.ratioText} Ratio`;
+      document.getElementById("total-water-display").textContent = `${scaledTotalWater + scaledIceWeight}g`;
+      document.getElementById("ice-weight-display").textContent = `${scaledIceWeight}g`;
+      document.getElementById("ice-badge").textContent = isIceMode ? "ICE" : "HOT";
+      document.getElementById("grind-display").textContent = currentRecipe.grindBase;
+
+      // Calculate Total Time
+      const totalTimeSec = scaledStages.reduce((acc, s) => acc + s.time, 0);
+      const mins = Math.floor(totalTimeSec / 60);
+      const secs = totalTimeSec % 60;
+      document.getElementById("total-time-display").textContent = `Total Time: ${mins}:${secs.toString().padStart(2, '0')}`;
+
+      // Render Sequence Cards
+      const container = document.getElementById("step-list-container");
+      container.innerHTML = scaledStages.map((st, idx) => `
+        <div class="glass-card ${idx === 0 ? 'active-step-card' : 'opacity-70'} rounded-xl p-4 flex flex-col gap-2.5">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-xs text-primary font-bold">STEP ${st.step.toString().padStart(2, '0')} (${st.name})</span>
+            <span class="font-mono text-[11px] text-on-surface-variant">저울 목표: ${st.cumulativeTarget}g</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <div class="flex flex-col">
+              <span class="font-mono text-[10px] text-on-surface-variant">WATER</span>
+              <span class="font-display font-semibold text-base text-on-surface">+${st.scaledWater}g</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="font-mono text-[10px] text-on-surface-variant">TEMP</span>
+              <span class="font-display font-semibold text-base text-on-surface">${st.temp}°C</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="font-mono text-[10px] text-on-surface-variant">TIME</span>
+              <span class="font-display font-semibold text-base text-on-surface">${st.time}s</span>
+            </div>
+            <div class="flex flex-col items-end">
+              <span class="font-mono text-[10px] text-on-surface-variant">SWITCH</span>
+              <span class="font-mono text-xs font-bold ${st.switch === 'open' ? 'text-tertiary' : 'text-error'}">${st.switch.toUpperCase()}</span>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // --- EVENT BINDINGS ---
+    function bindEvents() {
+      // Recipe select
+      document.getElementById("recipe-select").addEventListener("change", (e) => {
+        currentRecipe = RECIPES.find(r => r.id === e.target.value) || RECIPES[0];
+        currentBeanWeight = currentRecipe.baseBeanWeight;
+        isIceMode = currentRecipe.type === "ice";
+        updateHotIceButtons();
+        calculateAndRender();
+      });
+
+      // Bean stepper
+      document.getElementById("btn-bean-minus").addEventListener("click", () => {
+        if (currentBeanWeight > 5) {
+          currentBeanWeight -= 0.5;
+          calculateAndRender();
+        }
+      });
+
+      document.getElementById("btn-bean-plus").addEventListener("click", () => {
+        if (currentBeanWeight < 100) {
+          currentBeanWeight += 0.5;
+          calculateAndRender();
+        }
+      });
+
+      document.getElementById("input-bean-weight").addEventListener("change", (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val) && val >= 5 && val <= 100) {
+          currentBeanWeight = val;
+          calculateAndRender();
+        }
+      });
+
+      // Hot / Ice Toggle
+      document.getElementById("btn-type-hot").addEventListener("click", () => {
+        isIceMode = false;
+        updateHotIceButtons();
+        calculateAndRender();
+      });
+
+      document.getElementById("btn-type-ice").addEventListener("click", () => {
+        isIceMode = true;
+        updateHotIceButtons();
+        calculateAndRender();
+      });
+
+      // Sound toggle
+      document.getElementById("btn-sound-toggle").addEventListener("click", () => {
+        soundEnabled = !soundEnabled;
+        document.getElementById("sound-icon").textContent = soundEnabled ? "volume_up" : "volume_off";
+        playBeep(1000, 0.1);
+      });
+
+      // View Navigation
+      document.getElementById("btn-start-brew").addEventListener("click", startTimerView);
+      document.getElementById("btn-timer-stop").addEventListener("click", stopTimerView);
+      document.getElementById("btn-timer-toggle").addEventListener("click", toggleTimerPlayPause);
+      document.getElementById("btn-timer-skip").addEventListener("click", skipToNextStep);
+    }
+
+    function updateHotIceButtons() {
+      const btnHot = document.getElementById("btn-type-hot");
+      const btnIce = document.getElementById("btn-type-ice");
+      if (isIceMode) {
+        btnIce.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-tertiary text-on-tertiary shadow-sm";
+        btnHot.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
+      } else {
+        btnHot.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm";
+        btnIce.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
+      }
+    }
+
+    // --- TIMER ENGINE & LIVE VIEW ---
+    function startTimerView() {
+      // Request Screen WakeLock so mobile display won't sleep during drip
+      requestWakeLock();
+
+      // Switch UI to Timer View
+      document.getElementById("view-calculator").classList.add("hidden");
+      document.getElementById("calculator-action-bar").classList.add("hidden");
+      document.getElementById("bottom-nav").classList.add("hidden");
+
+      document.getElementById("view-timer").classList.remove("hidden");
+      document.getElementById("timer-control-bar").classList.remove("hidden");
+
+      // Reset timer counters
+      totalSecondsElapsed = 0;
+      currentStepIndex = 0;
+      stepTimeRemaining = scaledStages[0].time;
+
+      renderTimerStep();
+      startTimerInterval();
+    }
+
+    function stopTimerView() {
+      releaseWakeLock();
+      clearInterval(timerInterval);
+      timerRunning = false;
+
+      // Switch UI back to Calculator View
+      document.getElementById("view-timer").classList.add("hidden");
+      document.getElementById("timer-control-bar").classList.add("hidden");
+
+      document.getElementById("view-calculator").classList.remove("hidden");
+      document.getElementById("calculator-action-bar").classList.remove("hidden");
+      document.getElementById("bottom-nav").classList.remove("hidden");
+    }
+
+    function startTimerInterval() {
+      timerRunning = true;
+      updatePlayPauseButtonUI();
+      playBeep(880, 0.2); // Start beep
+
+      timerInterval = setInterval(() => {
+        totalSecondsElapsed++;
+        stepTimeRemaining--;
+
+        // Audio Beep countdown at 3, 2, 1 seconds
+        if (stepTimeRemaining <= 3 && stepTimeRemaining > 0) {
+          playBeep(600, 0.1);
+          if (navigator.vibrate) navigator.vibrate(100);
+        }
+
+        if (stepTimeRemaining <= 0) {
+          // Move to next step
+          currentStepIndex++;
+          if (currentStepIndex < scaledStages.length) {
+            stepTimeRemaining = scaledStages[currentStepIndex].time;
+            playBeep(1200, 0.3); // High beep for step transition
+            if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+          } else {
+            // Completed!
+            finishBrewing();
+            return;
+          }
+        }
+
+        renderTimerStep();
+      }, 1000);
+    }
+
+    function toggleTimerPlayPause() {
+      if (timerRunning) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById("timer-status-badge").textContent = "PAUSED";
+        document.getElementById("timer-status-badge").className = "font-mono text-xs text-primary font-bold tracking-widest";
+      } else {
+        startTimerInterval();
+        document.getElementById("timer-status-badge").textContent = "LIVE BREW";
+        document.getElementById("timer-status-badge").className = "font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow";
+      }
+      updatePlayPauseButtonUI();
+    }
+
+    function updatePlayPauseButtonUI() {
+      const icon = document.getElementById("timer-toggle-icon");
+      const text = document.getElementById("timer-toggle-text");
+      const btn = document.getElementById("btn-timer-toggle");
+
+      if (timerRunning) {
+        icon.textContent = "pause";
+        text.textContent = "Pause Brew";
+        btn.className = "flex-grow flex items-center justify-center gap-2 bg-brew-amber text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-amber/20 active:scale-[0.98] transition-all";
+      } else {
+        icon.textContent = "play_arrow";
+        text.textContent = "Resume Brew";
+        btn.className = "flex-grow flex items-center justify-center gap-2 bg-brew-green text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-green/20 active:scale-[0.98] transition-all";
+      }
+    }
+
+    function skipToNextStep() {
+      if (currentStepIndex < scaledStages.length - 1) {
+        currentStepIndex++;
+        stepTimeRemaining = scaledStages[currentStepIndex].time;
+        playBeep(1000, 0.15);
+        renderTimerStep();
+      } else {
+        finishBrewing();
+      }
+    }
+
+    function finishBrewing() {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      playBeep(1500, 0.5, 'triangle');
+      if (navigator.vibrate) navigator.vibrate([200, 100, 300]);
+
+      document.getElementById("timer-display").textContent = "DONE!";
+      document.getElementById("timer-status-badge").textContent = "BREW COMPLETE";
+      document.getElementById("timer-status-badge").className = "font-mono text-xs text-primary font-bold tracking-widest";
+      document.getElementById("timer-instruction").innerHTML = "☕ 맛있는 드립 커피가 완성되었습니다!";
+      document.getElementById("timer-progress-bar").style.width = "100%";
+    }
+
+    function renderTimerStep() {
+      const st = scaledStages[currentStepIndex];
+      const totalSteps = scaledStages.length;
+
+      // Timer Display Formatter
+      const mins = Math.floor(totalSecondsElapsed / 60);
+      const secs = totalSecondsElapsed % 60;
+      document.getElementById("timer-display").textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+      // Progress Bar
+      const progressPct = Math.min(100, Math.round(((currentStepIndex + 1) / totalSteps) * 100));
+      document.getElementById("timer-progress-bar").style.width = `${progressPct}%`;
+      document.getElementById("timer-step-counter").textContent = `Step ${currentStepIndex + 1} of ${totalSteps}`;
+
+      // Scale Target (Cumulative)
+      document.getElementById("timer-target-scale").textContent = st.cumulativeTarget;
+      document.getElementById("timer-step-water").textContent = `+${st.scaledWater}g`;
+
+      // Step Detail
+      document.getElementById("timer-step-title").textContent = `STEP ${st.step.toString().padStart(2, '0')} (${st.name})`;
+      document.getElementById("timer-instruction").innerHTML = `Pour <span class="text-brew-green font-black">+${st.scaledWater}g</span> Water now`;
+      document.getElementById("timer-step-temp").textContent = `${st.temp}°C`;
+      document.getElementById("timer-step-switch").textContent = `Switch ${st.switch.toUpperCase()}`;
+
+      // Next Step Preview
+      if (currentStepIndex < totalSteps - 1) {
+        const nextSt = scaledStages[currentStepIndex + 1];
+        document.getElementById("timer-next-label").textContent = `Next: Step ${nextSt.step}`;
+        document.getElementById("timer-next-desc").textContent = `Pour ${nextSt.scaledWater}g Water (${nextSt.name})`;
+        document.getElementById("timer-next-time").textContent = `in ${stepTimeRemaining}s`;
+      } else {
+        document.getElementById("timer-next-label").textContent = "Next: Final Drop";
+        document.getElementById("timer-next-desc").textContent = "추출 완료 및 서버 정리";
+        document.getElementById("timer-next-time").textContent = `in ${stepTimeRemaining}s`;
+      }
+    }
+
+    // --- WAKE LOCK API (Screen Keep Awake) ---
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {
+        console.log('Wake lock request failed:', err);
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+      }
+    }
+  </script>
+
+</body>
+</html>

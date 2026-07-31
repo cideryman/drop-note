@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#111315"/>
+  
+  <!-- Outer Glow/Border -->
+  <rect x="32" y="32" width="448" height="448" rx="80" fill="none" stroke="#E5A93B" stroke-width="8" stroke-opacity="0.2"/>
+  
+  <!-- Coffee Dripper Icon -->
+  <g transform="translate(136, 120)">
+    <!-- Dripper Body -->
+    <path d="M 20 60 L 220 60 L 160 200 L 80 200 Z" fill="none" stroke="#E5A93B" stroke-width="24" stroke-linejoin="round"/>
+    
+    <!-- Dripper Base -->
+    <path d="M 60 200 L 180 200 L 190 220 L 50 220 Z" fill="#E5A93B"/>
+    
+    <!-- Coffee Drops -->
+    <circle cx="120" cy="260" r="12" fill="#E5A93B"/>
+    <circle cx="120" cy="300" r="8" fill="#E5A93B" opacity="0.8"/>
+    <circle cx="120" cy="330" r="4" fill="#E5A93B" opacity="0.6"/>
+  </g>
+</svg>

@@ -6,6 +6,11 @@
   <meta name="application-name" content="드립노트"/>
   <meta name="apple-mobile-web-app-title" content="드립노트"/>
   <title>드립노트 - 커피 드립 계산기 & 타이머</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#111315"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"/>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -119,9 +124,14 @@
       <div class="flex flex-col gap-2">
         <div class="flex justify-between items-center">
           <label for="recipe-select" class="font-mono text-xs text-on-surface-variant tracking-widest">선택한 레시피</label>
-          <button id="btn-delete-recipe" type="button" class="hidden min-h-11 px-2 text-error hover:underline font-mono text-[11px] items-center gap-0.5">
-            <span class="material-symbols-outlined text-sm">delete</span> 삭제
-          </button>
+          <div class="flex items-center gap-1">
+            <button id="btn-edit-recipe" type="button" class="hidden min-h-11 px-2 text-primary hover:underline font-mono text-[11px] items-center gap-0.5">
+              <span class="material-symbols-outlined text-sm">edit</span> 수정
+            </button>
+            <button id="btn-delete-recipe" type="button" class="hidden min-h-11 px-2 text-error hover:underline font-mono text-[11px] items-center gap-0.5">
+              <span class="material-symbols-outlined text-sm">delete</span> 삭제
+            </button>
+          </div>
         </div>
         <div class="relative">
           <select id="recipe-select" aria-describedby="recipe-metadata" class="w-full glass-card rounded-xl p-4 pr-10 appearance-none font-display font-semibold text-lg text-primary bg-transparent focus:outline-none focus:border-primary/50 cursor-pointer">
@@ -330,10 +340,21 @@
         </div>
 
         <form id="form-add-recipe" class="flex flex-col gap-3">
+          <input type="hidden" id="editing-recipe-id" value=""/>
+
           <div>
             <label for="new-recipe-name" class="font-mono text-xs text-on-surface-variant block mb-1">레시피 이름 *</label>
             <input type="text" id="new-recipe-name" required maxlength="80" placeholder="예: 에티오피아 단맛 레시피" class="w-full min-h-11 bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-display text-sm text-white focus:outline-none focus:border-primary"/>
           </div>
+
+          <fieldset>
+            <legend class="font-mono text-xs text-on-surface-variant block mb-1">추출 방식 *</legend>
+            <div class="flex rounded-xl bg-surface-container-highest/60 p-1 border border-white/5">
+              <button id="btn-modal-type-hot" type="button" aria-pressed="true" class="flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold bg-primary-container text-on-primary transition-all">핫</button>
+              <button id="btn-modal-type-ice" type="button" aria-pressed="false" class="flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold text-on-surface-variant hover:text-white transition-all">아이스</button>
+            </div>
+            <p id="modal-type-help" class="mt-1 text-[10px] text-on-surface-variant">핫 레시피로 저장합니다.</p>
+          </fieldset>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -618,6 +639,7 @@
     let scaledIceWeight = 0;
     let scaledTotalWater = 0;
     let scaledFinalWater = 0;
+    let modalRecipeType = "hot";
 
     // Web Audio Synthesizer
     let audioCtx = null;
@@ -771,10 +793,13 @@
 
     function updateDeleteButtonVisibility() {
       const btnDelete = document.getElementById("btn-delete-recipe");
+      const btnEdit = document.getElementById("btn-edit-recipe");
       if (currentRecipe && currentRecipe.isCustom) {
         btnDelete.classList.remove("hidden");
+        btnEdit.classList.remove("hidden");
       } else {
         btnDelete.classList.add("hidden");
+        btnEdit.classList.add("hidden");
       }
     }
 
@@ -867,10 +892,17 @@
         };
       }
 
+      const baseHotWater = currentRecipe.hotWaterTotal
+        || currentRecipe.stages.reduce((sum, stage) => sum + Number(stage.water || 0), 0);
+      const baseIceWeight = currentRecipe.iceWeight
+        || currentRecipe.baseBeanWeight * ICE_FALLBACK_POLICY.iceRatio;
+      const hotWaterRatio = formatRatioValue(baseHotWater / currentRecipe.baseBeanWeight);
+      const iceRatio = formatRatioValue(baseIceWeight / currentRecipe.baseBeanWeight);
+
       return {
         badge: currentRecipe.variantLabel || (currentRecipe.isCustom ? "나만의 레시피" : "원본"),
         description: isIceMode
-          ? `아이스 레시피 · 추출수 1:${ICE_FALLBACK_POLICY.hotWaterRatio} + 얼음 1:${ICE_FALLBACK_POLICY.iceRatio}`
+          ? `아이스 레시피 · 추출수 1:${hotWaterRatio} + 얼음 1:${iceRatio}`
           : (currentRecipe.isCustom ? "나만의 핫 레시피" : "원본 핫 레시피"),
         isAppVariant: currentRecipe.isVariant === true || currentRecipe.isCustom
       };
@@ -1111,6 +1143,10 @@
       });
 
       // Delete Custom Recipe
+      document.getElementById("btn-edit-recipe").addEventListener("click", () => {
+        if (currentRecipe?.isCustom) openEditRecipeModal(currentRecipe);
+      });
+
       document.getElementById("btn-delete-recipe").addEventListener("click", () => {
         if (!currentRecipe || !currentRecipe.isCustom) return;
         if (confirm(`'${getRecipeDisplayName(currentRecipe)}' 레시피를 삭제하시겠습니까?`)) {
@@ -1170,6 +1206,8 @@
       document.getElementById("btn-cancel-modal").addEventListener("click", closeAddRecipeModal);
       document.getElementById("btn-add-stage-row").addEventListener("click", addStageRowInModal);
       document.getElementById("form-add-recipe").addEventListener("submit", handleAddRecipeSubmit);
+      document.getElementById("btn-modal-type-hot").addEventListener("click", () => setModalRecipeType("hot"));
+      document.getElementById("btn-modal-type-ice").addEventListener("click", () => setModalRecipeType("ice"));
       document.getElementById("new-base-bean").addEventListener("input", updateCustomRecipePreview);
       document.getElementById("modal-stages-container").addEventListener("input", updateCustomRecipePreview);
 
@@ -1474,7 +1512,8 @@
         water: Number(row.querySelector(".stage-water").value),
         temp: Number(row.querySelector(".stage-temp").value),
         time: Number(row.querySelector(".stage-time").value),
-        switch: row.querySelector(".stage-switch").value
+        switch: row.querySelector(".stage-switch").value,
+        guideMode: row.querySelector(".stage-guide-mode").value
       }));
     }
 
@@ -1498,6 +1537,7 @@
 
       stages.forEach((stage, index) => {
         const label = `${index + 1}단계`;
+        const guideMode = stage.guideMode || (stage.water > 0 ? "immediate" : "event");
         if (!stage.name || stage.name.length > 80) errors.push(`${label} 이름을 1–80자로 입력해주세요.`);
         if (!Number.isFinite(stage.water) || stage.water < 0 || stage.water > 1000) {
           errors.push(`${label} 물량은 0–1000g 범위로 입력해주세요.`);
@@ -1510,6 +1550,15 @@
         }
         if (!["open", "closed"].includes(stage.switch)) {
           errors.push(`${label} 스위치 상태가 올바르지 않습니다.`);
+        }
+        if (!["linear", "immediate", "event"].includes(guideMode)) {
+          errors.push(`${label} 저울 가이드 방식이 올바르지 않습니다.`);
+        }
+        if (stage.water > 0 && guideMode === "event") {
+          errors.push(`${label}에 물량이 있으면 동작 가이드를 사용할 수 없습니다.`);
+        }
+        if (stage.water === 0 && guideMode !== "event") {
+          errors.push(`${label}의 물량이 0g이면 동작 가이드를 선택해주세요.`);
         }
       });
 
@@ -1540,15 +1589,70 @@
       preview.textContent = `1:${formatRatioValue(totalWater / baseBeanWeight)} · 추출수 ${totalWater}g`;
     }
 
+    function setModalRecipeType(type) {
+      modalRecipeType = type === "ice" ? "ice" : "hot";
+      const isIce = modalRecipeType === "ice";
+      const hotButton = document.getElementById("btn-modal-type-hot");
+      const iceButton = document.getElementById("btn-modal-type-ice");
+      hotButton.setAttribute("aria-pressed", (!isIce).toString());
+      iceButton.setAttribute("aria-pressed", isIce.toString());
+      hotButton.className = isIce
+        ? "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold text-on-surface-variant hover:text-white transition-all"
+        : "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold bg-primary-container text-on-primary transition-all";
+      iceButton.className = isIce
+        ? "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold bg-tertiary text-surface transition-all"
+        : "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold text-on-surface-variant hover:text-white transition-all";
+      document.getElementById("modal-type-help").textContent = isIce
+        ? `입력한 단계 물량을 추출수로 사용하고 서버 얼음은 원두 대비 1:${ICE_FALLBACK_POLICY.iceRatio}로 계산합니다.`
+        : "핫 레시피로 저장합니다.";
+    }
+
+    function setCustomRecipeModalTitle(isEditing) {
+      const title = document.getElementById("add-recipe-title");
+      title.textContent = "";
+      appendTextElement(title, "span", "material-symbols-outlined", isEditing ? "edit" : "edit_note");
+      title.appendChild(document.createTextNode(isEditing ? " 나만의 레시피 수정" : " 나만의 레시피 추가"));
+    }
+
     function openAddRecipeModal() {
+      document.getElementById("editing-recipe-id").value = "";
+      setCustomRecipeModalTitle(false);
       document.getElementById("modal-add-recipe").classList.remove("hidden");
       document.getElementById("btn-open-add-modal").setAttribute("aria-expanded", "true");
       document.getElementById("form-add-recipe").reset();
+      setModalRecipeType("hot");
       const container = document.getElementById("modal-stages-container");
       container.innerHTML = "";
-      addStageRowInModal("1차 뜸들이기", 40, 92, 45, "open");
-      addStageRowInModal("2차 메인 주입", 80, 92, 45, "open");
-      addStageRowInModal("3차 마무리 주입", 80, 90, 45, "open");
+      addStageRowInModal("1차 뜸들이기", 40, 92, 45, "open", "immediate");
+      addStageRowInModal("2차 메인 주입", 80, 92, 45, "open", "linear");
+      addStageRowInModal("3차 마무리 주입", 80, 90, 45, "open", "linear");
+      updateCustomRecipePreview();
+      document.getElementById("new-recipe-name").focus?.();
+    }
+
+    function openEditRecipeModal(recipe) {
+      if (!recipe?.isCustom) return;
+      document.getElementById("editing-recipe-id").value = recipe.id;
+      setCustomRecipeModalTitle(true);
+      document.getElementById("modal-add-recipe").classList.remove("hidden");
+      document.getElementById("btn-open-add-modal").setAttribute("aria-expanded", "true");
+      document.getElementById("new-recipe-name").value = recipe.recipeName || recipe.name || "";
+      document.getElementById("new-base-bean").value = recipe.baseBeanWeight;
+      document.getElementById("new-grind-size").value = recipe.grindBase || "";
+      setModalRecipeType(recipe.type);
+
+      const container = document.getElementById("modal-stages-container");
+      container.textContent = "";
+      recipe.stages.forEach(stage => {
+        addStageRowInModal(
+          stage.name,
+          stage.water,
+          stage.temp,
+          Math.max(1, stage.stepEndSec - stage.startSec),
+          stage.switch,
+          stage.guideMode
+        );
+      });
       updateCustomRecipePreview();
       document.getElementById("new-recipe-name").focus?.();
     }
@@ -1559,7 +1663,7 @@
       document.getElementById("btn-open-add-modal").focus?.();
     }
 
-    function addStageRowInModal(defaultName = "", defaultWater = 50, defaultTemp = 92, defaultTime = 45, defaultSwitch = "open") {
+    function addStageRowInModal(defaultName = "", defaultWater = 50, defaultTemp = 92, defaultTime = 45, defaultSwitch = "open", defaultGuideMode = "immediate") {
       const container = document.getElementById("modal-stages-container");
       const index = container.children.length + 1;
       const rowId = `stage-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -1571,27 +1675,42 @@
           <button type="button" aria-label="${index}단계 삭제" class="btn-remove-stage-row min-h-11 px-2 text-error hover:text-white font-mono text-[10px]">삭제</button>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <input type="text" maxlength="80" aria-label="${index}단계 이름" class="stage-name min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs text-white" placeholder="단계 이름" value="${defaultName || '주입 ' + index}"/>
-          <input type="number" min="0" max="1000" step="1" aria-label="${index}단계 물량" class="stage-water min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs font-mono text-white" placeholder="물량(g)" value="${defaultWater}"/>
+          <input type="text" maxlength="80" aria-label="${index}단계 이름" class="stage-name min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs text-white" placeholder="단계 이름"/>
+          <input type="number" min="0" max="1000" step="1" aria-label="${index}단계 물량" class="stage-water min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs font-mono text-white" placeholder="물량(g)"/>
         </div>
-        <div class="grid grid-cols-3 gap-1.5">
+        <div class="grid grid-cols-2 gap-1.5">
           <div>
             <label for="${rowId}-temp" class="font-mono text-[9px] text-on-surface-variant block">온도(°C)</label>
-            <input id="${rowId}-temp" type="number" min="40" max="100" step="1" aria-label="${index}단계 온도" class="stage-temp min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTemp}"/>
+            <input id="${rowId}-temp" type="number" min="40" max="100" step="1" aria-label="${index}단계 온도" class="stage-temp min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white"/>
           </div>
           <div>
             <label for="${rowId}-time" class="font-mono text-[9px] text-on-surface-variant block">시간(초)</label>
-            <input id="${rowId}-time" type="number" min="1" max="600" step="1" aria-label="${index}단계 시간" class="stage-time min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTime}"/>
+            <input id="${rowId}-time" type="number" min="1" max="600" step="1" aria-label="${index}단계 시간" class="stage-time min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white"/>
           </div>
           <div>
             <label for="${rowId}-switch" class="font-mono text-[9px] text-on-surface-variant block">스위치</label>
             <select id="${rowId}-switch" aria-label="${index}단계 스위치 상태" class="stage-switch min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1 py-1 text-xs font-mono text-white">
-              <option value="open" ${defaultSwitch === 'open' ? 'selected' : ''}>열림</option>
-              <option value="closed" ${defaultSwitch === 'closed' ? 'selected' : ''}>닫힘</option>
+              <option value="open">열림</option>
+              <option value="closed">닫힘</option>
+            </select>
+          </div>
+          <div>
+            <label for="${rowId}-guide" class="font-mono text-[9px] text-on-surface-variant block">저울 가이드</label>
+            <select id="${rowId}-guide" aria-label="${index}단계 저울 가이드" class="stage-guide-mode min-h-11 w-full bg-surface-container-highest border border-white/5 rounded-lg px-1 py-1 text-xs font-mono text-white">
+              <option value="immediate">바로 목표량</option>
+              <option value="linear">시간에 맞춰 증가</option>
+              <option value="event">물 없는 동작</option>
             </select>
           </div>
         </div>
       `;
+
+      row.querySelector(".stage-name").value = defaultName || `주입 ${index}`;
+      row.querySelector(".stage-water").value = defaultWater;
+      row.querySelector(".stage-temp").value = defaultTemp;
+      row.querySelector(".stage-time").value = defaultTime;
+      row.querySelector(".stage-switch").value = defaultSwitch;
+      row.querySelector(".stage-guide-mode").value = defaultGuideMode;
 
       row.querySelector(".btn-remove-stage-row").addEventListener("click", () => {
         if (container.children.length > 1) {
@@ -1610,6 +1729,7 @@
       e.preventDefault();
       
       const name = document.getElementById("new-recipe-name").value.trim();
+      const editingRecipeId = document.getElementById("editing-recipe-id").value;
       const baseBeanWeight = Number(document.getElementById("new-base-bean").value);
       const grindBase = document.getElementById("new-grind-size").value.trim() || "코만단테 24클릭";
       const stages = collectCustomStageDrafts();
@@ -1624,28 +1744,59 @@
       const recommendedDoseMax = Math.min(100, Math.round(baseBeanWeight * 2 * 2) / 2);
       const usesSwitch = stages.some(stage => stage.switch === "closed");
 
-      const newRecipe = normalizeRecipeTimeline({
-        id: "custom_" + Date.now(),
+      let timelineCursor = 0;
+      const timelineStages = stages.map(stage => {
+        const startSec = timelineCursor;
+        const stepEndSec = startSec + stage.time;
+        const pourEndSec = stage.water <= 0
+          ? startSec
+          : (stage.guideMode === "linear" ? stepEndSec : Math.min(stepEndSec, startSec + 10));
+        timelineCursor = stepEndSec;
+        return {
+          step: stage.step,
+          name: stage.name,
+          action: stage.water > 0 ? "pour" : "wait",
+          water: stage.water,
+          temp: stage.temp,
+          startSec,
+          pourEndSec,
+          stepEndSec,
+          guideMode: stage.guideMode,
+          switch: stage.switch
+        };
+      });
+      const iceWeight = modalRecipeType === "ice"
+        ? Math.round(baseBeanWeight * ICE_FALLBACK_POLICY.iceRatio)
+        : 0;
+      const recipeId = editingRecipeId || `custom_${Date.now()}`;
+      const savedRecipe = normalizeRecipeTimeline({
+        id: recipeId,
         creator: null,
         recipeName: name,
         baseBeanWeight: baseBeanWeight,
         grindBase: grindBase,
-        type: "hot",
+        type: modalRecipeType,
         ratioText: `1:${formatRatioValue(validation.ratio)}`,
+        finalRatioText: modalRecipeType === "ice"
+          ? `1:${formatRatioValue((validation.totalWater + iceWeight) / baseBeanWeight)}`
+          : null,
+        hotWaterTotal: modalRecipeType === "ice" ? validation.totalWater : null,
+        iceWeight: modalRecipeType === "ice" ? iceWeight : 0,
+        finalWaterTotal: modalRecipeType === "ice" ? validation.totalWater + iceWeight : null,
         equipment: usesSwitch ? "Hario Switch" : "드리퍼",
         equipmentLabel: usesSwitch ? "Switch" : "드리퍼",
-        variantLabel: "나만의 레시피",
+        variantLabel: modalRecipeType === "ice" ? "나만의 아이스 레시피" : "나만의 레시피",
         isVariant: true,
         sourceLabel: "사용자 작성",
         sourceUrl: null,
         recommendedDoseMin,
         recommendedDoseMax,
         isCustom: true,
-        stages: stages
+        stages: timelineStages
       });
 
       const existingCustom = allRecipes.filter(r => r.isCustom);
-      const updatedCustom = [...existingCustom, newRecipe];
+      const updatedCustom = upsertCustomRecipe(existingCustom, savedRecipe, editingRecipeId);
 
       if (!saveCustomRecipesToStorage(updatedCustom)) {
         alert("레시피를 저장하지 못했습니다. 브라우저 저장 공간을 확인해주세요.");
@@ -1653,13 +1804,22 @@
       }
       loadRecipesFromStorage();
 
-      currentRecipe = newRecipe;
-      currentBeanWeight = newRecipe.baseBeanWeight;
+      currentRecipe = allRecipes.find(recipe => recipe.id === recipeId) || allRecipes[0];
+      currentBeanWeight = currentRecipe.baseBeanWeight;
+      isIceMode = currentRecipe.type === "ice";
       renderRecipeDropdown();
+      updateHotIceButtons();
       calculateAndRender();
 
       closeAddRecipeModal();
       playBeep(1200, 0.2);
+    }
+
+    function upsertCustomRecipe(existingCustom, savedRecipe, editingRecipeId = "") {
+      if (!editingRecipeId) return [...existingCustom, savedRecipe];
+      const editingIndex = existingCustom.findIndex(recipe => recipe.id === editingRecipeId);
+      if (editingIndex < 0) return [...existingCustom, savedRecipe];
+      return existingCustom.map((recipe, index) => index === editingIndex ? savedRecipe : recipe);
     }
 
     function updateHotIceButtons() {
@@ -2084,6 +2244,14 @@
       } catch (err) {
         console.warn("화면 꺼짐 방지 해제에 실패했습니다:", err);
       }
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js").catch(error => {
+          console.error("오프라인 기능을 등록하지 못했습니다:", error);
+        });
+      });
     }
   </script>
 

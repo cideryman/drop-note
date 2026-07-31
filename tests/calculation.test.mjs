@@ -312,6 +312,30 @@ assert.equal(normalizedValidDraft.valid, true);
 assert.equal(normalizedValidDraft.totalWater, 200);
 assert.equal(formatNumber(normalizedValidDraft.ratio), formatNumber(200 / 15));
 
+const editResult = vm.runInContext(`
+  (() => {
+    const existing = [
+      { id: "custom_1", recipeName: "기존 A" },
+      { id: "custom_2", recipeName: "기존 B" }
+    ];
+    const updated = upsertCustomRecipe(
+      existing,
+      { id: "custom_1", recipeName: "수정 A", type: "ice" },
+      "custom_1"
+    );
+    return {
+      count: updated.length,
+      first: updated[0],
+      second: updated[1]
+    };
+  })();
+`, context);
+assert.deepEqual(JSON.parse(JSON.stringify(editResult)), {
+  count: 2,
+  first: { id: "custom_1", recipeName: "수정 A", type: "ice" },
+  second: { id: "custom_2", recipeName: "기존 B" }
+});
+
 const invalidDraft = vm.runInContext(`
   validateCustomRecipeDraft({
     name: "",

@@ -63,6 +63,8 @@ const context = vm.createContext({
   console,
   alert() {},
   confirm() { return true; },
+  setTimeout() { return 1; },
+  clearTimeout() {},
   setInterval() { return 1; },
   clearInterval() {},
   Date,
@@ -102,6 +104,7 @@ function calculate(recipeId, beanWeight, iceMode) {
       finalLabel: document.getElementById("final-yield-display").textContent,
       variantBadge: document.getElementById("recipe-variant-badge").textContent,
       modeDescription: document.getElementById("brew-mode-description").textContent,
+      temperatureTransitionSummary: document.getElementById("temperature-transition-summary").textContent,
       hotDisabled: document.getElementById("btn-type-hot").disabled,
       stepListHtml: document.getElementById("step-list-container").innerHTML
     });
@@ -140,19 +143,30 @@ function renderTimerAt(recipeId, beanWeight, iceMode, elapsedSeconds) {
     calculateAndRender();
     totalSecondsElapsed = ${elapsedSeconds};
     syncTimerStepToElapsed();
+    document.getElementById("timer-instruction").innerHTML = "";
+    document.getElementById("timer-step-pour-desc").innerHTML = "";
+    document.getElementById("timer-action-banner-title").textContent = "";
+    document.getElementById("timer-action-banner-detail").textContent = "";
+    document.getElementById("timer-action-banner-icon").textContent = "";
+    shownActionEventKeys = new Set();
     renderTimerStep();
     ({
       target: document.getElementById("timer-target-scale").textContent,
       instruction: document.getElementById("timer-instruction").innerHTML || document.getElementById("timer-instruction").textContent,
+      pourDescription: document.getElementById("timer-step-pour-desc").innerHTML || document.getElementById("timer-step-pour-desc").textContent,
       nextTime: document.getElementById("timer-next-time").textContent,
       nextLabel: document.getElementById("timer-next-label").textContent,
       nextDescription: document.getElementById("timer-next-desc").textContent,
       stageTitle: document.getElementById("timer-step-title").textContent,
       progress: document.getElementById("timer-progress-bar").style.width,
+      stepProgress: document.getElementById("timer-step-progress-bar").style.width,
       temperature: document.getElementById("timer-step-temp").textContent,
       temperatureAccent: document.getElementById("timer-target-card").style["--temperature-accent"],
       switchLabel: document.getElementById("timer-step-switch").textContent,
-      switchIcon: document.getElementById("timer-step-switch-icon").textContent
+      switchIcon: document.getElementById("timer-step-switch-icon").textContent,
+      actionTitle: document.getElementById("timer-action-banner-title").textContent,
+      actionDetail: document.getElementById("timer-action-banner-detail").textContent,
+      actionIcon: document.getElementById("timer-action-banner-icon").textContent
     });
   `, context);
   return JSON.parse(JSON.stringify(result));
@@ -168,6 +182,7 @@ assert.equal(kasuyaHot.totalLabel, "300g");
 assert.equal(kasuyaHot.finalLabel, "300g");
 assert.equal(kasuyaHot.variantBadge, "원본 균형형");
 assert.equal(kasuyaHot.modeDescription, "원본 핫 레시피");
+assert.equal(kasuyaHot.temperatureTransitionSummary, "");
 assert.equal(kasuyaHot.hotDisabled, false);
 assert.doesNotMatch(kasuyaHot.stepListHtml, /SWITCH/);
 
@@ -202,6 +217,7 @@ assert.equal(hoffmannHot.totalLabel, "250g");
 
 const switchHot = calculate("hario_switch_sweet", 20, false);
 assert.match(switchHot.stepListHtml, /스위치/);
+assert.equal(switchHot.temperatureTransitionSummary, "1:15 · 권장 90°C → 70°C");
 
 const scaled = calculate("kasuya_46", 17.5, true);
 assert.equal(scaled.totalWater, 175);
@@ -222,6 +238,47 @@ const kasuyaAtStart = renderTimerAt("kasuya_46", 20, false, 0);
 assert.equal(kasuyaAtStart.target, 60);
 assert.match(kasuyaAtStart.instruction, /60g/);
 assert.equal(kasuyaAtStart.progress, "0%");
+assert.equal(kasuyaAtStart.stepProgress, "0%");
+
+const kasuyaMidStep = renderTimerAt("kasuya_46", 20, false, 22.5);
+assert.equal(kasuyaMidStep.stepProgress, "50%");
+
+const switchTenSecondsIntoLowStep = renderTimerAt("hario_switch_sweet", 20, false, 85);
+assert.equal(switchTenSecondsIntoLowStep.stepProgress, "33.3%");
+
+const switchBeforeTemperaturePrep = renderTimerAt("hario_switch_sweet", 20, false, 44);
+assert.doesNotMatch(switchBeforeTemperaturePrep.instruction, /다음 단계 준비/);
+assert.match(switchBeforeTemperaturePrep.instruction, /주입 완료/);
+
+const switchAtTemperaturePrep = renderTimerAt("hario_switch_sweet", 20, false, 45);
+assert.equal(switchAtTemperaturePrep.target, 120);
+assert.equal(switchAtTemperaturePrep.temperature, "90°C");
+assert.equal(switchAtTemperaturePrep.temperatureAccent, "#e5a93b");
+assert.match(switchAtTemperaturePrep.instruction, /다음 단계 준비/);
+assert.match(switchAtTemperaturePrep.instruction, /1:15에 사용할 권장 70°C 물을 준비하세요/);
+assert.doesNotMatch(switchAtTemperaturePrep.instruction, /스위치.*닫/);
+assert.match(switchAtTemperaturePrep.pourDescription, /현재 권장 목표 120g 유지/);
+
+const switchAtTemperatureChange = renderTimerAt("hario_switch_sweet", 20, false, 75);
+assert.equal(switchAtTemperatureChange.target, 280);
+assert.equal(switchAtTemperatureChange.temperature, "70°C");
+assert.match(switchAtTemperatureChange.instruction, /280g까지 바로 주입하세요/);
+assert.doesNotMatch(switchAtTemperatureChange.instruction, /다음 단계 준비/);
+assert.equal(switchAtTemperatureChange.actionTitle, "스위치를 닫으세요");
+assert.equal(switchAtTemperatureChange.actionIcon, "horizontal_rule");
+assert.match(switchAtTemperatureChange.actionDetail, /권장 목표 280g/);
+
+const switchAtOpenEvent = renderTimerAt("hario_switch_sweet", 20, false, 105);
+assert.equal(switchAtOpenEvent.actionTitle, "스위치를 여세요");
+assert.equal(switchAtOpenEvent.actionIcon, "arrow_downward");
+assert.equal(switchAtOpenEvent.actionDetail, "드로우다운을 시작합니다");
+
+const hoffmannAtSwirlEvent = renderTimerAt("james_hoffmann_v60", 15, false, 105);
+assert.equal(hoffmannAtSwirlEvent.actionTitle, "교반하고 스월링하세요");
+assert.equal(hoffmannAtSwirlEvent.actionIcon, "rotate_right");
+
+const noActionDuringOrdinaryPour = renderTimerAt("kasuya_46", 20, false, 45);
+assert.equal(noActionDuringOrdinaryPour.actionTitle, "");
 
 const hoffmannAtOneMinute = renderTimerAt("james_hoffmann_v60", 15, false, 60);
 assert.equal(hoffmannAtOneMinute.target, 90);

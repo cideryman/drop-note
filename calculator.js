@@ -12,6 +12,9 @@ let scaledIceWeight = 0;
 let scaledTotalWater = 0;
 let scaledFinalWater = 0;
 let modalRecipeType = "hot";
+const TEMPERATURE_CHANGE_THRESHOLD_C = 5;
+const TEMPERATURE_PREP_LEAD_SEC = 30;
+const TEMPERATURE_MIN_PREP_DURATION_SEC = 5;
 function renderRecipeDropdown() {
   const select = document.getElementById("recipe-select");
   select.textContent = "";
@@ -279,6 +282,7 @@ function calculateAndRender() {
   document.getElementById("grind-display").textContent = currentRecipe.grindBase || "코만단테 24클릭";
   updateDoseControls();
   updateRecipeMetadata();
+  updateTemperatureTransitionNotice();
 
   const totalTimeSec = scaledStages.reduce((max, stage) => Math.max(max, stage.stepEndSec), 0);
   document.getElementById("total-time-display").textContent = `총 추출 시간 ${formatBrewTime(totalTimeSec)}`;
@@ -410,6 +414,78 @@ function splitStageLabel(name) {
     title: match[1].trim(),
     detail: match[2].trim()
   };
+}
+
+function getTemperatureTransitions(stages) {
+  const transitions = [];
+  for (let index = 0; index < stages.length - 1; index++) {
+    const currentStage = stages[index];
+    const nextStage = stages[index + 1];
+    if (
+      !Number.isFinite(currentStage.temp) ||
+      !Number.isFinite(nextStage.temp) ||
+      Math.abs(nextStage.temp - currentStage.temp) < TEMPERATURE_CHANGE_THRESHOLD_C
+    ) {
+      continue;
+    }
+    transitions.push({
+      currentIndex: index,
+      nextIndex: index + 1,
+      fromTemp: currentStage.temp,
+      toTemp: nextStage.temp,
+      startSec: nextStage.startSec
+    });
+  }
+  return transitions;
+}
+
+function getTemperaturePreparation(stages, stageIndex, elapsedSeconds) {
+  if (stageIndex < 0 || stageIndex >= stages.length - 1) return null;
+  const currentStage = stages[stageIndex];
+  const nextStage = stages[stageIndex + 1];
+  if (
+    !Number.isFinite(currentStage.temp) ||
+    !Number.isFinite(nextStage.temp) ||
+    Math.abs(nextStage.temp - currentStage.temp) < TEMPERATURE_CHANGE_THRESHOLD_C
+  ) {
+    return null;
+  }
+
+  const prepStartSec = Math.max(
+    currentStage.pourEndSec,
+    nextStage.startSec - TEMPERATURE_PREP_LEAD_SEC
+  );
+  if (nextStage.startSec - prepStartSec < TEMPERATURE_MIN_PREP_DURATION_SEC) {
+    return null;
+  }
+
+  return {
+    prepStartSec,
+    nextStartSec: nextStage.startSec,
+    fromTemp: currentStage.temp,
+    toTemp: nextStage.temp,
+    active: elapsedSeconds >= prepStartSec && elapsedSeconds < nextStage.startSec
+  };
+}
+
+function updateTemperatureTransitionNotice() {
+  const notice = document.getElementById("temperature-transition-notice");
+  const summary = document.getElementById("temperature-transition-summary");
+  const transitions = getTemperatureTransitions(scaledStages);
+  if (transitions.length === 0) {
+    notice.classList.add("hidden");
+    notice.classList.remove("flex");
+    summary.textContent = "";
+    return;
+  }
+
+  summary.textContent = transitions
+    .map(transition => (
+      `${formatBrewTime(transition.startSec)} · 권장 ${transition.fromTemp}°C → ${transition.toTemp}°C`
+    ))
+    .join(" / ");
+  notice.classList.remove("hidden");
+  notice.classList.add("flex");
 }
 
 // --- EVENT BINDINGS ---

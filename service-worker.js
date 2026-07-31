@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drip-note-v1.5';
+const CACHE_NAME = 'drip-note-v1.8';
 const APP_SHELL = [
   './',
   './index.html',

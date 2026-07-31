@@ -68,6 +68,8 @@ const context = vm.createContext({
   console: { ...console, error() {} },
   alert() {},
   confirm() { return true; },
+  setTimeout() { return 1; },
+  clearTimeout() {},
   setInterval() { return 1; },
   clearInterval() {},
   Date,

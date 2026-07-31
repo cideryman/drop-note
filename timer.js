@@ -14,6 +14,9 @@ let timerLastCountdownSecond = null;
 let totalSecondsElapsed = 0;
 let currentStepIndex = 0;
 let stepTimeRemaining = 0;
+let shownActionEventKeys = new Set();
+let actionBannerFadeTimer = null;
+let actionBannerHideTimer = null;
 // Web Audio Synthesizer
 let audioCtx = null;
 try {
@@ -85,6 +88,8 @@ function startTimerView() {
   timerRunStartedAtMs = null;
   timerElapsedBeforeRunMs = 0;
   timerLastCountdownSecond = null;
+  shownActionEventKeys = new Set();
+  hideActionBanner(true);
   totalSecondsElapsed = 0;
   currentStepIndex = 0;
   stepTimeRemaining = scaledStages[0].stepEndSec;
@@ -109,6 +114,8 @@ function stopTimerView() {
   timerRunStartedAtMs = null;
   timerElapsedBeforeRunMs = 0;
   timerLastCountdownSecond = null;
+  shownActionEventKeys = new Set();
+  hideActionBanner(true);
   document.body.classList.remove("timer-focus-active");
 
   document.getElementById("view-timer").classList.add("hidden");
@@ -166,7 +173,7 @@ function timerTick(nowMs = getCurrentTimeMs()) {
     if (navigator.vibrate) navigator.vibrate(100);
   }
 
-  renderTimerStep();
+  renderTimerStep(elapsedMs / 1000);
   return true;
 }
 
@@ -190,7 +197,7 @@ function pauseTimer(nowMs = getCurrentTimeMs()) {
   document.getElementById("timer-status-badge").textContent = "일시정지";
   document.getElementById("timer-status-badge").className = "font-mono text-xs text-primary font-bold tracking-widest";
   updatePlayPauseButtonUI();
-  renderTimerStep();
+  renderTimerStep(timerElapsedBeforeRunMs / 1000);
   return true;
 }
 
@@ -271,6 +278,7 @@ function finishBrewing() {
   timerElapsedBeforeRunMs = totalSecondsElapsed * 1000;
   stepTimeRemaining = 0;
   currentStepIndex = Math.max(0, scaledStages.length - 1);
+  hideActionBanner(true);
   releaseWakeLock();
   playBeep(1500, 0.5, 'triangle');
   if (navigator.vibrate) navigator.vibrate([200, 100, 300]);
@@ -281,6 +289,9 @@ function finishBrewing() {
   document.getElementById("timer-instruction").textContent = "☕ 맛있는 드립 커피가 완성되었습니다!";
   document.getElementById("timer-progress-bar").style.width = "100%";
   document.getElementById("timer-progress-bar").setAttribute("aria-valuenow", "100");
+  document.getElementById("timer-step-progress-bar").style.width = "100%";
+  document.getElementById("timer-step-progress-bar").setAttribute("aria-valuenow", "100");
+  document.getElementById("timer-step-progress-bar").setAttribute("aria-valuetext", "현재 단계 100% 진행");
   document.getElementById("timer-step-counter").textContent = `${scaledStages.length}/${scaledStages.length}단계`;
   const skipButton = document.getElementById("btn-timer-skip");
   skipButton.disabled = true;
@@ -290,7 +301,7 @@ function finishBrewing() {
   return true;
 }
 
-function renderTimerStep() {
+function renderTimerStep(exactElapsedSeconds = totalSecondsElapsed) {
   const st = scaledStages[currentStepIndex];
   const totalSteps = scaledStages.length;
 
@@ -303,6 +314,15 @@ function renderTimerStep() {
   document.getElementById("timer-progress-bar").style.width = `${progressPct}%`;
   document.getElementById("timer-progress-bar").setAttribute("aria-valuenow", progressPct.toString());
   document.getElementById("timer-step-counter").textContent = `${currentStepIndex + 1}/${totalSteps}단계`;
+  maybeShowActionBanner(st, exactElapsedSeconds);
+
+  const stepDuration = Math.max(1, st.stepEndSec - st.startSec);
+  const stepProgress = Math.min(1, Math.max(0, (exactElapsedSeconds - st.startSec) / stepDuration));
+  const stepProgressPct = Number((stepProgress * 100).toFixed(1));
+  const stepProgressBar = document.getElementById("timer-step-progress-bar");
+  stepProgressBar.style.width = `${stepProgressPct}%`;
+  stepProgressBar.setAttribute("aria-valuenow", Math.round(stepProgressPct).toString());
+  stepProgressBar.setAttribute("aria-valuetext", `현재 단계 ${Math.round(stepProgressPct)}% 진행`);
 
   const guidedTarget = getGuidedTarget(st, totalSecondsElapsed);
   document.getElementById("timer-target-scale").textContent = guidedTarget;
@@ -310,6 +330,11 @@ function renderTimerStep() {
   const stageLabel = splitStageLabel(st.name);
   document.getElementById("timer-step-title").textContent = `${st.step}단계 · ${stageLabel.title}`;
   const isPouring = st.scaledWater > 0 && totalSecondsElapsed < st.pourEndSec;
+  const temperaturePreparation = getTemperaturePreparation(
+    scaledStages,
+    currentStepIndex,
+    totalSecondsElapsed
+  );
   if (isPouring && st.guideMode === "linear") {
     setTimerInstruction([
       { text: `${formatBrewTime(st.pourEndSec)}까지 ${st.cumulativeTarget}g`, emphasized: true },
@@ -320,6 +345,8 @@ function renderTimerStep() {
       { text: `${st.cumulativeTarget}g`, emphasized: true },
       { text: "까지 바로 주입하세요" }
     ]);
+  } else if (temperaturePreparation?.active) {
+    setTemperaturePreparationInstruction(temperaturePreparation);
   } else if (st.scaledWater > 0) {
     setTimerInstruction([
       { text: "주입 완료 · " },
@@ -330,7 +357,20 @@ function renderTimerStep() {
     document.getElementById("timer-instruction").textContent = stageLabel.title;
   }
   document.getElementById("timer-step-pour-desc").textContent = "";
-  if (stageLabel.detail) {
+  if (temperaturePreparation?.active) {
+    appendTextElement(
+      document.getElementById("timer-step-pour-desc"),
+      "span",
+      "",
+      "현재 권장 목표 "
+    );
+    appendTextElement(
+      document.getElementById("timer-step-pour-desc"),
+      "span",
+      "text-primary font-bold",
+      `${st.cumulativeTarget}g 유지`
+    );
+  } else if (stageLabel.detail) {
     appendTextElement(
       document.getElementById("timer-step-pour-desc"),
       "span",
@@ -344,18 +384,20 @@ function renderTimerStep() {
       "·"
     );
   }
-  appendTextElement(
-    document.getElementById("timer-step-pour-desc"),
-    "span",
-    "",
-    "이번 단계 "
-  );
-  appendTextElement(
-    document.getElementById("timer-step-pour-desc"),
-    "span",
-    "text-primary font-bold",
-    st.scaledWater > 0 ? `+${st.scaledWater}g` : "물 주입 없음"
-  );
+  if (!temperaturePreparation?.active) {
+    appendTextElement(
+      document.getElementById("timer-step-pour-desc"),
+      "span",
+      "",
+      "이번 단계 "
+    );
+    appendTextElement(
+      document.getElementById("timer-step-pour-desc"),
+      "span",
+      "text-primary font-bold",
+      st.scaledWater > 0 ? `+${st.scaledWater}g` : "물 주입 없음"
+    );
+  }
   document.getElementById("timer-step-temp").textContent = `${st.temp}°C`;
   applyTimerTemperatureAccent(st.temp);
   const switchContainer = document.getElementById("timer-step-switch-container");
@@ -408,6 +450,116 @@ function applyTimerTemperatureAccent(temp) {
   const accent = getTemperatureAccent(temp);
   targetCard.style.setProperty("--temperature-accent", accent.color);
   targetCard.style.setProperty("--temperature-rgb", accent.rgb);
+}
+
+function setTemperaturePreparationInstruction(preparation) {
+  const container = document.getElementById("timer-instruction");
+  container.textContent = "";
+  appendTextElement(
+    container,
+    "span",
+    "block mb-1 font-mono text-[11px] font-bold tracking-wider text-primary",
+    "다음 단계 준비"
+  );
+  appendTextElement(
+    container,
+    "span",
+    "",
+    `${formatBrewTime(preparation.nextStartSec)}에 사용할 권장 `
+  );
+  const temperature = appendTextElement(
+    container,
+    "span",
+    "font-black whitespace-nowrap",
+    `${preparation.toTemp}°C`
+  );
+  temperature.style.color = getTemperatureAccent(preparation.toTemp).color;
+  appendTextElement(container, "span", "", " 물을 준비하세요");
+}
+
+function getStageActionEvent(stage, stageIndex) {
+  if (!stage || stageIndex < 0) return null;
+  const previousStage = scaledStages[stageIndex - 1];
+  const isSwitchRecipe = currentRecipe?.equipment === "Hario Switch";
+  const switchChanged = isSwitchRecipe && previousStage && previousStage.switch !== stage.switch;
+
+  if (switchChanged || stage.action === "open-switch" || stage.action === "close-switch") {
+    const isClosed = stage.switch === "closed" || stage.action === "close-switch";
+    return isClosed
+      ? {
+        icon: "horizontal_rule",
+        title: "스위치를 닫으세요",
+        detail: stage.scaledWater > 0
+          ? `${stage.temp}°C 물 · 권장 목표 ${stage.cumulativeTarget}g`
+          : "침출을 시작합니다"
+      }
+      : {
+        icon: "arrow_downward",
+        title: "스위치를 여세요",
+        detail: "드로우다운을 시작합니다"
+      };
+  }
+
+  if (stage.action === "swirl" || stage.action === "stir" || stage.action === "agitate") {
+    return {
+      icon: "rotate_right",
+      title: stage.action === "swirl" ? "교반하고 스월링하세요" : "가볍게 교반하세요",
+      detail: "지금 한 번 부드럽게 실행하세요"
+    };
+  }
+
+  if (stage.guideMode === "event" && stage.action !== "wait") {
+    return {
+      icon: "touch_app",
+      title: splitStageLabel(stage.name).title,
+      detail: "지금 실행하세요"
+    };
+  }
+  return null;
+}
+
+function maybeShowActionBanner(stage, exactElapsedSeconds) {
+  const event = getStageActionEvent(stage, currentStepIndex);
+  if (!event || exactElapsedSeconds < stage.startSec || exactElapsedSeconds > stage.startSec + 2) {
+    return false;
+  }
+
+  const eventKey = `${currentRecipe?.id || "recipe"}:${currentStepIndex}:${stage.startSec}:${stage.action}:${stage.switch}`;
+  if (shownActionEventKeys.has(eventKey)) return false;
+  shownActionEventKeys.add(eventKey);
+  showActionBanner(event);
+  return true;
+}
+
+function showActionBanner(event) {
+  const banner = document.getElementById("timer-action-banner");
+  clearTimeout(actionBannerFadeTimer);
+  clearTimeout(actionBannerHideTimer);
+  document.getElementById("timer-action-banner-icon").textContent = event.icon;
+  document.getElementById("timer-action-banner-title").textContent = event.title;
+  document.getElementById("timer-action-banner-detail").textContent = event.detail;
+  banner.classList.remove("hidden");
+  banner.classList.remove("action-banner-visible");
+  void banner.offsetWidth;
+  banner.classList.add("action-banner-visible");
+
+  actionBannerFadeTimer = setTimeout(() => {
+    banner.classList.remove("action-banner-visible");
+  }, 1700);
+  actionBannerHideTimer = setTimeout(() => {
+    banner.classList.add("hidden");
+  }, 1950);
+}
+
+function hideActionBanner(immediate = false) {
+  clearTimeout(actionBannerFadeTimer);
+  clearTimeout(actionBannerHideTimer);
+  actionBannerFadeTimer = null;
+  actionBannerHideTimer = null;
+  const banner = document.getElementById("timer-action-banner");
+  if (!banner) return;
+  banner.classList.remove("action-banner-visible");
+  if (immediate) banner.classList.add("hidden");
 }
 
 function setTimerInstruction(parts) {

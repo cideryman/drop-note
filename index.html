@@ -117,6 +117,16 @@
         </p>
       </div>
 
+      <!-- Temperature Transition Notice (Conditional) -->
+      <div id="temperature-transition-notice" role="note" class="hidden border border-tertiary/25 bg-tertiary/10 rounded-xl p-3.5 items-start gap-3">
+        <span class="material-symbols-outlined text-tertiary shrink-0 text-xl" aria-hidden="true">device_thermostat</span>
+        <div class="min-w-0">
+          <p class="font-mono text-xs font-bold text-tertiary">온도 전환 준비</p>
+          <p id="temperature-transition-summary" class="mt-1 font-mono text-[11px] text-on-surface leading-relaxed"></p>
+          <p class="mt-1 text-[11px] text-on-surface-variant leading-relaxed">추출 전에 다음 온도의 물을 준비할 방법을 확인해 주세요.</p>
+        </div>
+      </div>
+
       <!-- Summary Grid -->
       <section class="grid grid-cols-2 gap-3">
         <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
@@ -165,6 +175,15 @@
 
     <!-- VIEW 2: LIVE TIMER VIEW -->
     <div id="view-timer" class="hidden flex-grow pt-5 pb-32 px-5 flex flex-col transition-opacity duration-300">
+      <div id="timer-action-banner" role="status" aria-live="polite" aria-atomic="true" class="timer-action-banner hidden fixed top-20 left-1/2 -translate-x-1/2 z-30 w-full max-w-md px-5 pointer-events-none">
+        <div class="glass-card flex items-center gap-3 rounded-2xl border border-primary/35 bg-surface-container/95 px-4 py-3 shadow-xl">
+          <span id="timer-action-banner-icon" class="material-symbols-outlined shrink-0 text-2xl text-primary" aria-hidden="true">touch_app</span>
+          <div class="min-w-0">
+            <p id="timer-action-banner-title" class="font-display text-sm font-bold text-on-surface">동작 안내</p>
+            <p id="timer-action-banner-detail" class="mt-0.5 truncate font-mono text-[10px] text-on-surface-variant"></p>
+          </div>
+        </div>
+      </div>
       
       <!-- Top Progress Indicator -->
       <section class="mb-4">
@@ -192,7 +211,7 @@
         </div>
 
         <!-- Scale Target Display -->
-        <div id="timer-target-card" class="timer-temperature-card px-6 py-5 rounded-3xl w-full shadow-xl">
+        <div id="timer-target-card" class="timer-temperature-card relative overflow-hidden px-6 py-5 rounded-3xl w-full shadow-xl">
           <p class="font-mono text-[11px] text-on-surface-variant tracking-wider mb-1">현재 권장 저울 목표</p>
           <div class="flex items-baseline justify-center gap-1.5">
             <span id="timer-target-scale" class="text-[72px] leading-none font-display font-black text-brew-amber tabular-nums">45</span>
@@ -208,6 +227,9 @@
               <span id="timer-step-switch-icon" class="material-symbols-outlined text-base" aria-hidden="true">arrow_downward</span>
               <span id="timer-step-switch" class="font-mono text-[11px] font-bold">열림 · 배출</span>
             </div>
+          </div>
+          <div class="absolute inset-x-0 bottom-0 h-1 bg-white/5">
+            <div id="timer-step-progress-bar" role="progressbar" aria-label="현재 단계 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="현재 단계 0% 진행" class="timer-stage-progress h-full transition-[width] duration-300 ease-linear" style="width: 0%"></div>
           </div>
         </div>
 

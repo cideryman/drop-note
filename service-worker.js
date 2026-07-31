@@ -1,7 +1,13 @@
-const CACHE_NAME = 'drip-note-v1.2';
+const CACHE_NAME = 'drip-note-v1.4';
 const APP_SHELL = [
   './',
   './index.html',
+  './styles.css',
+  './recipes.js',
+  './calculator.js',
+  './storage.js',
+  './timer.js',
+  './app.js',
   './manifest.json',
   './icon.svg',
   './icon-180.png',
@@ -9,7 +15,6 @@ const APP_SHELL = [
   './icon-512.png'
 ];
 const OPTIONAL_EXTERNAL_ASSETS = [
-  'https://cdn.tailwindcss.com/?plugins=forms,container-queries',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap',
   'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap'
 ];
@@ -68,7 +73,6 @@ self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(request.url);
   const isSameOrigin = requestUrl.origin === self.location.origin;
   const isAllowedExternal = [
-    'cdn.tailwindcss.com',
     'fonts.googleapis.com',
     'fonts.gstatic.com'
   ].includes(requestUrl.hostname);

@@ -3,9 +3,10 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const match = html.match(/const DEFAULT_RECIPES = (\[[\s\S]*?\n    \]);/);
+const recipeSource = fs.readFileSync(new URL("../recipes.js", import.meta.url), "utf8");
+const match = recipeSource.match(/const DEFAULT_RECIPES = (\[[\s\S]*?\n\]);/);
 
-assert.ok(match, "index.html에서 DEFAULT_RECIPES를 찾을 수 있어야 합니다.");
+assert.ok(match, "recipes.js에서 DEFAULT_RECIPES를 찾을 수 있어야 합니다.");
 
 const recipes = vm.runInNewContext(match[1]);
 const byId = Object.fromEntries(recipes.map(recipe => [recipe.id, recipe]));

@@ -8,3 +8,6 @@ Thumbs.db
 
 # Temporary / Log files
 *.log
+
+# Local build dependencies
+node_modules/

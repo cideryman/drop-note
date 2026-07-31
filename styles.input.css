@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #111315;
+    color: #e2e2e5;
+    font-family: "Inter", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 3px solid #ffc664;
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(30, 32, 34, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .active-step-card {
+    border-left: 4px solid #e5a93b;
+    background: rgba(229, 169, 59, 0.12);
+  }
+
+  .active-step-border {
+    border: 2px solid #00e676;
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.25);
+  }
+
+  .progress-glow {
+    box-shadow: 0 0 12px rgba(229, 169, 59, 0.5);
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+
+  .fill-icon {
+    font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@layer utilities {
+  .animate-pulse-slow {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}

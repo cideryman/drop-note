@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
+import { loadAppScript } from "./load-app-script.mjs";
 
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
-const appScript = scripts.at(-1)?.[1];
+const appScript = loadAppScript();
 
 assert.ok(appScript?.includes("const DEFAULT_RECIPES"), "애플리케이션 스크립트를 찾을 수 있어야 합니다.");
 

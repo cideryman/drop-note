@@ -50,14 +50,37 @@
 
 ## 🚀 실행 방법 (Getting Started)
 
-별도의 백엔드 서버나 빌드 과정 없이, 브라우저 하나로 바로 실행됩니다.
+배포된 파일은 별도의 백엔드나 런타임 빌드 없이 정적 웹 서버에서 바로 실행됩니다. PWA와 오프라인 기능을 확인하려면 `file://` 대신 로컬 HTTP 서버를 사용합니다.
 
 1. 이 저장소를 다운로드하거나 클론합니다.
-2. `index.html` 파일을 모바일/PC 브라우저(Chrome, Safari, Edge 등)로 열어 사용합니다.
+2. 프로젝트 폴더에서 정적 서버를 실행합니다.
+3. 표시된 주소를 모바일/PC 브라우저(Chrome, Safari, Edge 등)로 엽니다.
 
 ```bash
-# 파일 위치
-c:\Users\sec\Desktop\레시피\index.html
+python -m http.server 8000
+```
+
+### 개발 및 검사
+
+화면 클래스나 디자인 토큰을 변경한 경우 정적 CSS를 다시 빌드합니다.
+
+```bash
+npm install
+npm run build:css
+npm test
+```
+
+### 코드 구조
+
+```text
+index.html        화면 구조
+styles.css        배포용 정적 CSS
+styles.input.css  CSS 빌드 원본
+recipes.js        기본 프리셋과 데이터 정규화
+calculator.js     계산·화면·커스텀 레시피
+storage.js        저장·백업·가져오기 검증
+timer.js          타이머·사운드·Wake Lock
+app.js            앱 초기화·PWA 등록
 ```
 
 ---

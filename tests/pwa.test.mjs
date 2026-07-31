@@ -9,6 +9,7 @@ const rootDir = path.resolve(testDir, "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, "manifest.json"), "utf8"));
 const worker = fs.readFileSync(path.join(rootDir, "service-worker.js"), "utf8");
 const html = fs.readFileSync(path.join(rootDir, "index.html"), "utf8");
+const app = fs.readFileSync(path.join(rootDir, "app.js"), "utf8");
 
 test("PWA 매니페스트가 설치 범위와 필수 아이콘을 제공한다", () => {
   assert.equal(manifest.name, "드립노트");
@@ -27,9 +28,21 @@ test("PWA 매니페스트가 설치 범위와 필수 아이콘을 제공한다",
 test("앱 셸과 서비스 워커 등록이 연결되어 있다", () => {
   assert.match(html, /rel="manifest" href="manifest\.json"/);
   assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="icon-180\.png"/);
-  assert.match(html, /navigator\.serviceWorker\.register\("\.\/service-worker\.js"\)/);
+  assert.match(app, /navigator\.serviceWorker\.register\("\.\/service-worker\.js"\)/);
 
-  for (const filename of ["index.html", "manifest.json", "icon-180.png", "icon-192.png", "icon-512.png"]) {
+  for (const filename of [
+    "index.html",
+    "styles.css",
+    "recipes.js",
+    "calculator.js",
+    "storage.js",
+    "timer.js",
+    "app.js",
+    "manifest.json",
+    "icon-180.png",
+    "icon-192.png",
+    "icon-512.png"
+  ]) {
     assert.match(worker, new RegExp(filename.replace(".", "\\.")));
   }
   assert.match(worker, /cache\.startsWith\('drip-note-'\)/);

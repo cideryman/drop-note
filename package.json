@@ -1,0 +1,13 @@
+{
+  "name": "drop-note",
+  "version": "2.1.0",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./styles.input.css -o ./styles.css --minify",
+    "test": "node --test tests/calculation.test.mjs tests/data-import.test.mjs tests/pwa.test.mjs tests/recipe-presets.test.mjs tests/ux.test.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "tailwindcss": "^3.4.17"
+  }
+}

@@ -1,7 +1,7 @@
 # 드립노트 개선 로드맵
 
 > 작성일: 2026-07-31  
-> 상태: 계획 수립 완료 / 구현 전  
+> 상태: 전체 우선순위 구현 및 검증 완료
 > 목적: 레시피 정확도, 추출 중 사용성, 데이터 및 타이머 안정성을 우선순위에 따라 개선한다.
 
 ## 기본 원칙
@@ -24,9 +24,9 @@
 | 6 | NAME-01 | 프리셋 이름과 제작자·도구·변형 메타데이터 분리 | P2 | DATA-01 | 완료 |
 | 7 | TIMER-01 | 타이머 드리프트 및 Wake Lock 복구 처리 | P1 | CORE-01 | 완료 |
 | 8 | UX-01 | 인터페이스, 언어, 접근성 정리 | P2 | RCP-02, NAME-01 | 완료 |
-| 9 | QA-01 | 핵심 계산·저장·타이머 테스트 추가 | P1 | CORE-02, DATA-01, TIMER-01 | 대기 |
-| 10 | ARCH-01 | 단일 HTML 코드 모듈화 및 배포 의존성 정리 | P2 | QA-01 | 대기 |
-| 11 | PWA-01 | 홈 화면 설치·오프라인 실행·iOS 복귀 흐름 | P2 | ARCH-01 | 대기 |
+| 9 | QA-01 | 핵심 계산·저장·타이머 테스트 추가 | P1 | CORE-02, DATA-01, TIMER-01 | 완료 |
+| 10 | ARCH-01 | 단일 HTML 코드 모듈화 및 배포 의존성 정리 | P2 | QA-01 | 완료 |
+| 11 | PWA-01 | 홈 화면 설치·오프라인 실행·iOS 복귀 흐름 | P2 | ARCH-01 | 완료 |
 
 ## 1. RCP-01 — 기본 프리셋 교정
 
@@ -274,6 +274,14 @@ ICE 모드가 단계별 물량은 그대로 둔 채 얼음을 추가하여, 화�
 - 정상·손상·악성 JSON 가져오기
 - LocalStorage 마이그레이션과 저장 실패
 
+### 진행 기록
+
+- 완료일: 2026-07-31
+- 변경 파일: `tests/calculation.test.mjs`, `tests/data-import.test.mjs`, `tests/recipe-presets.test.mjs`, `tests/ux.test.mjs`, `tests/pwa.test.mjs`, `tests/load-app-script.mjs`
+- 검증 방법: `npm test`로 계산·타임라인·입력·타이머·백업·악성 JSON·프리셋·UX·PWA 자동 회귀 테스트 6건 통과
+- 남은 문제: 실제 iPhone Safari 설치는 배포 URL에서 최종 기기 확인 필요
+- 관련 커밋: 이번 구조 개선 묶음 커밋
+
 ## 10. ARCH-01 — 코드 구조와 배포
 
 현재 단일 HTML의 간편함은 유지하되 다음 단위로 분리한다.
@@ -291,6 +299,14 @@ tests/
 - React 같은 대형 프레임워크 도입은 현재 범위에서 필요하지 않다.
 - Tailwind Play CDN 대신 정적 CSS 빌드 또는 최소한의 자체 CSS를 사용한다.
 - PWA 설치와 오프라인 지원은 `PWA-01`에서 진행한다.
+
+### 진행 기록
+
+- 완료일: 2026-07-31
+- 변경 파일: `index.html`, `styles.css`, `styles.input.css`, `tailwind.config.cjs`, `recipes.js`, `calculator.js`, `storage.js`, `timer.js`, `app.js`, `package.json`, `package-lock.json`
+- 검증 방법: 모든 JavaScript 파일 문법 검사, `npm run build:css`, `npm test`, 390×844 브라우저에서 정적 CSS·계산·타이머·모바일 레이아웃 확인
+- 남은 문제: Inter·JetBrains Mono·Material Symbols는 네트워크 사용 시 Google Fonts를 사용하고, 오프라인에서는 캐시 또는 시스템 폰트로 대체
+- 관련 커밋: 이번 구조 개선 묶음 커밋
 
 ## 11. PWA-01 — 설치와 오프라인 사용
 
@@ -314,6 +330,14 @@ tests/
 - 네트워크 없이 앱과 기본 프리셋을 열 수 있다.
 - 백그라운드에서 복귀한 직후 실제 경과 시각에 맞는 단계와 남은 시간이 표시된다.
 - 지원하지 않는 백그라운드 연속 실행이나 Dynamic Island 표시를 사용자에게 약속하지 않는다.
+
+### 진행 기록
+
+- 완료일: 2026-07-31
+- 변경 파일: `manifest.json`, `service-worker.js`, `icon.svg`, `icon-180.png`, `icon-192.png`, `icon-512.png`, `app.js`, `styles.css`
+- 검증 방법: 앱 셸 설치 후 로컬 서버를 종료하고 CSS·분리된 JavaScript·기본 프리셋·저장 레시피가 서비스 워커 캐시만으로 다시 열리는지 확인
+- 남은 문제: iOS Dynamic Island Live Activity는 PWA 범위 밖이며, 실제 기기의 홈 화면 설치 아이콘·실행 화면은 배포 후 최종 확인 필요
+- 관련 커밋: PWA·레시피 편집 및 이번 구조 개선 묶음 커밋
 
 ## 진행 기록 규칙
 

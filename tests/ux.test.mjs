@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { loadAppScript } from "./load-app-script.mjs";
 
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const appScript = loadAppScript();
 
 const viewport = html.match(/<meta\s+content="([^"]+)"\s+name="viewport"\/>/)?.[1] ?? "";
 assert.match(viewport, /width=device-width/);
@@ -48,6 +50,8 @@ for (const buttonId of [
   assert.match(button, /(?:min-h-11|h-12)/, `${buttonId}: 터치 높이는 최소 44px여야 합니다.`);
 }
 
-assert.match(html, /confirm\("추출 타이머를 종료할까요\?/);
+assert.match(appScript, /confirm\("추출 타이머를 종료할까요\?/);
+assert.match(html, /href="styles\.css"/);
+assert.doesNotMatch(html, /cdn\.tailwindcss\.com|tailwind\.config/);
 
 console.log("한국어·확대·레이블·터치 영역·종료 확인 UX 검증 완료");

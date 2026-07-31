@@ -18,16 +18,28 @@ assert.match(html, />서버 얼음</);
 assert.equal(sumWater(byId.kasuya_46), 300);
 assert.equal(byId.kasuya_46.baseBeanWeight, 20);
 assert.equal(totalTime(byId.kasuya_46), 210);
+assert.equal(byId.kasuya_46.creator, "테츠 카스야");
+assert.equal(byId.kasuya_46.recipeName, "4:6");
+assert.equal(byId.kasuya_46.equipmentLabel, "V60");
 
 assert.equal(sumWater(byId.hario_switch_sweet), 280);
 assert.equal(byId.hario_switch_sweet.baseBeanWeight, 20);
 assert.equal(totalTime(byId.hario_switch_sweet), 180);
+assert.equal(byId.hario_switch_sweet.creator, "테츠 카스야");
+assert.equal(byId.hario_switch_sweet.recipeName, "Devil");
+assert.equal(byId.hario_switch_sweet.equipmentLabel, "Switch");
 
 assert.equal(sumWater(byId.james_hoffmann_v60), 250);
 assert.equal(byId.james_hoffmann_v60.baseBeanWeight, 15);
 assert.equal(totalTime(byId.james_hoffmann_v60), 210);
+assert.equal(byId.james_hoffmann_v60.creator, "제임스 호프만");
+assert.equal(byId.james_hoffmann_v60.recipeName, "Ultimate");
+assert.equal(byId.james_hoffmann_v60.equipmentLabel, "V60");
 
 const iceRecipe = byId.ice_drip_classic;
+assert.equal(iceRecipe.creator, null);
+assert.equal(iceRecipe.recipeName, "아이스 기본형");
+assert.equal(iceRecipe.equipmentLabel, "V60");
 assert.equal(sumWater(iceRecipe), iceRecipe.hotWaterTotal);
 assert.equal(iceRecipe.hotWaterTotal / iceRecipe.baseBeanWeight, 10);
 assert.equal(iceRecipe.iceWeight, 100);
@@ -35,6 +47,7 @@ assert.equal(iceRecipe.hotWaterTotal + iceRecipe.iceWeight, iceRecipe.finalWater
 assert.equal(iceRecipe.finalWaterTotal / iceRecipe.baseBeanWeight, 15);
 
 for (const recipe of recipes) {
+  assert.equal("name" in recipe, false, `${recipe.id}: 조합된 제목을 원본 데이터에 중복 저장하지 않아야 합니다.`);
   assert.ok(recipe.equipment, `${recipe.id}: 장비 정보가 필요합니다.`);
   assert.ok(recipe.variantLabel, `${recipe.id}: 원본/변형 표시가 필요합니다.`);
   assert.ok(recipe.sourceLabel, `${recipe.id}: 출처 설명이 필요합니다.`);

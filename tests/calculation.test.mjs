@@ -20,7 +20,9 @@ const createElement = () => ({
     remove() {}
   },
   addEventListener() {},
-  appendChild() {},
+  appendChild(child) {
+    this.innerHTML += `${child.textContent || ""}${child.innerHTML || ""}`;
+  },
   remove() {},
   setAttribute() {},
   removeAttribute() {},
@@ -62,6 +64,19 @@ const context = vm.createContext({
 });
 
 vm.runInContext(appScript, context);
+
+assert.equal(
+  vm.runInContext("getRecipeDisplayName(DEFAULT_RECIPES.find(recipe => recipe.id === 'kasuya_46'))", context),
+  "테츠 카스야 · 4:6"
+);
+assert.equal(
+  vm.runInContext("getRecipeDisplayName(DEFAULT_RECIPES.find(recipe => recipe.id === 'ice_drip_classic'))", context),
+  "아이스 기본형"
+);
+assert.equal(
+  vm.runInContext("getEquipmentLabel(DEFAULT_RECIPES.find(recipe => recipe.id === 'hario_switch_sweet'))", context),
+  "Switch"
+);
 
 function calculate(recipeId, beanWeight, iceMode) {
   const result = vm.runInContext(`
@@ -227,4 +242,105 @@ assert.deepEqual(
   ]
 );
 
-console.log("HOT/ICE 계산·절대 타임라인·권장 중량 검증 완료");
+assert.equal(html.includes('id="new-ratio-text"'), false);
+assert.match(html, /id="new-ratio-preview"/);
+
+const doseRange = recipeId => {
+  const result = vm.runInContext(`
+    getDoseRange(DEFAULT_RECIPES.find(recipe => recipe.id === ${JSON.stringify(recipeId)}));
+  `, context);
+  return JSON.parse(JSON.stringify(result));
+};
+assert.deepEqual(doseRange("kasuya_46"), { min: 15, max: 30 });
+assert.deepEqual(doseRange("hario_switch_sweet"), { min: 15, max: 25 });
+assert.deepEqual(doseRange("james_hoffmann_v60"), { min: 15, max: 30 });
+
+const fallbackRange = vm.runInContext(`getDoseRange({ baseBeanWeight: 15 });`, context);
+assert.deepEqual(JSON.parse(JSON.stringify(fallbackRange)), { min: 7.5, max: 30 });
+
+const invalidDoseResult = vm.runInContext(`
+  (() => {
+    currentRecipe = DEFAULT_RECIPES.find(recipe => recipe.id === "kasuya_46");
+    currentBeanWeight = 20;
+    isIceMode = false;
+    const accepted = applyBeanWeight(14.5);
+    return { accepted, currentBeanWeight, message: document.getElementById("dose-validation-message").textContent };
+  })();
+`, context);
+const normalizedInvalidDose = JSON.parse(JSON.stringify(invalidDoseResult));
+assert.equal(normalizedInvalidDose.accepted, false);
+assert.equal(normalizedInvalidDose.currentBeanWeight, 20);
+assert.match(normalizedInvalidDose.message, /15–30g/);
+
+const halfGramResult = vm.runInContext(`
+  (() => {
+    currentRecipe = DEFAULT_RECIPES.find(recipe => recipe.id === "kasuya_46");
+    currentBeanWeight = 20;
+    isIceMode = false;
+    const accepted = applyBeanWeight(17.3);
+    return { accepted, currentBeanWeight, message: document.getElementById("dose-validation-message").textContent };
+  })();
+`, context);
+const normalizedHalfGram = JSON.parse(JSON.stringify(halfGramResult));
+assert.equal(normalizedHalfGram.accepted, false);
+assert.equal(normalizedHalfGram.currentBeanWeight, 20);
+assert.match(normalizedHalfGram.message, /0.5g 단위/);
+
+const validDoseResult = vm.runInContext(`
+  (() => {
+    currentRecipe = DEFAULT_RECIPES.find(recipe => recipe.id === "kasuya_46");
+    currentBeanWeight = 20;
+    isIceMode = false;
+    const accepted = applyBeanWeight(17.5);
+    return { accepted, currentBeanWeight };
+  })();
+`, context);
+assert.deepEqual(JSON.parse(JSON.stringify(validDoseResult)), { accepted: true, currentBeanWeight: 17.5 });
+
+const validDraft = vm.runInContext(`
+  validateCustomRecipeDraft({
+    name: "테스트 레시피",
+    baseBeanWeight: 15,
+    stages: [
+      { name: "Bloom", water: 40, temp: 92, time: 30, switch: "open" },
+      { name: "Main", water: 160, temp: 92, time: 90, switch: "open" }
+    ]
+  });
+`, context);
+const normalizedValidDraft = JSON.parse(JSON.stringify(validDraft));
+assert.equal(normalizedValidDraft.valid, true);
+assert.equal(normalizedValidDraft.totalWater, 200);
+assert.equal(formatNumber(normalizedValidDraft.ratio), formatNumber(200 / 15));
+
+const invalidDraft = vm.runInContext(`
+  validateCustomRecipeDraft({
+    name: "",
+    baseBeanWeight: 15.3,
+    stages: [
+      { name: "", water: -1, temp: 110, time: 0, switch: "broken" }
+    ]
+  });
+`, context);
+const normalizedInvalidDraft = JSON.parse(JSON.stringify(invalidDraft));
+assert.equal(normalizedInvalidDraft.valid, false);
+assert.ok(normalizedInvalidDraft.errors.length >= 6);
+
+for (const recipeId of ["kasuya_46", "hario_switch_sweet", "james_hoffmann_v60", "ice_drip_classic"]) {
+  const range = doseRange(recipeId);
+  for (let beanWeight = range.min; beanWeight <= range.max; beanWeight += 0.5) {
+    const hotAllowed = recipeId !== "ice_drip_classic";
+    if (hotAllowed) {
+      const hot = calculate(recipeId, beanWeight, false);
+      assert.equal(hot.lastTarget, hot.totalWater, `${recipeId} ${beanWeight}g HOT 누적값 불일치`);
+    }
+    const ice = calculate(recipeId, beanWeight, true);
+    assert.equal(ice.lastTarget, ice.totalWater, `${recipeId} ${beanWeight}g ICE 누적값 불일치`);
+    assert.equal(ice.finalWater, ice.totalWater + ice.iceWeight, `${recipeId} ${beanWeight}g 최종량 불일치`);
+  }
+}
+
+console.log("계산·타임라인·원두 범위·커스텀 입력 검증 완료");
+
+function formatNumber(value) {
+  return Number(value.toFixed(8));
+}

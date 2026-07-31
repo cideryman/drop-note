@@ -2,8 +2,10 @@
 <html class="dark" lang="ko">
 <head>
   <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-  <title>PourOver Pro - 커피 드립 계산기 & 타이머</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta name="application-name" content="드립노트"/>
+  <meta name="apple-mobile-web-app-title" content="드립노트"/>
+  <title>드립노트 - 커피 드립 계산기 & 타이머</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -45,7 +47,6 @@
       background-color: #111315;
       color: #e2e2e5;
       font-family: 'Inter', sans-serif;
-      user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
     .glass-card {
@@ -78,6 +79,10 @@
     .fill-icon {
       font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
     }
+    :focus-visible {
+      outline: 3px solid #ffc664;
+      outline-offset: 2px;
+    }
     ::-webkit-scrollbar {
       display: none;
     }
@@ -92,16 +97,16 @@
     <header class="fixed top-0 max-w-md w-full z-40 bg-surface/70 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-5 h-16">
       <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-primary fill-icon">coffee_maker</span>
-        <h1 class="font-display font-bold text-xl text-primary tracking-tight">PourOver Pro</h1>
+        <h1 class="font-display font-bold text-xl text-primary tracking-tight">드립노트</h1>
       </div>
       <div class="flex items-center gap-1.5">
-        <button id="btn-sound-toggle" class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+        <button id="btn-sound-toggle" type="button" aria-label="소리 알림 끄기" title="소리 알림 켜기 또는 끄기" class="min-w-11 min-h-11 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
           <span class="material-symbols-outlined" id="sound-icon">volume_up</span>
         </button>
-        <button id="btn-open-backup-modal" class="p-1.5 text-on-surface-variant hover:text-primary transition-colors">
+        <button id="btn-open-backup-modal" type="button" aria-label="레시피 백업 및 복원 열기" aria-haspopup="dialog" aria-expanded="false" class="min-w-11 min-h-11 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
           <span class="material-symbols-outlined">cloud_sync</span>
         </button>
-        <button id="btn-open-add-modal" class="p-1.5 text-primary hover:brightness-125 transition-all flex items-center gap-0.5 font-mono text-xs font-bold bg-primary/10 px-2 py-1 rounded-lg border border-primary/20">
+        <button id="btn-open-add-modal" type="button" aria-haspopup="dialog" aria-expanded="false" class="min-h-11 text-primary hover:brightness-125 transition-all flex items-center gap-1 font-mono text-xs font-bold bg-primary/10 px-3 rounded-lg border border-primary/20">
           <span class="material-symbols-outlined text-base">add_circle</span> 추가
         </button>
       </div>
@@ -113,28 +118,28 @@
       <!-- Recipe Selector Dropdown Header -->
       <div class="flex flex-col gap-2">
         <div class="flex justify-between items-center">
-          <label class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Selected Recipe</label>
-          <button id="btn-delete-recipe" class="hidden text-error hover:underline font-mono text-[11px] flex items-center gap-0.5">
+          <label for="recipe-select" class="font-mono text-xs text-on-surface-variant tracking-widest">선택한 레시피</label>
+          <button id="btn-delete-recipe" type="button" class="hidden min-h-11 px-2 text-error hover:underline font-mono text-[11px] items-center gap-0.5">
             <span class="material-symbols-outlined text-sm">delete</span> 삭제
           </button>
         </div>
         <div class="relative">
-          <select id="recipe-select" class="w-full glass-card rounded-xl p-4 pr-10 appearance-none font-display font-semibold text-lg text-primary bg-transparent focus:outline-none focus:border-primary/50 cursor-pointer">
+          <select id="recipe-select" aria-describedby="recipe-metadata" class="w-full glass-card rounded-xl p-4 pr-10 appearance-none font-display font-semibold text-lg text-primary bg-transparent focus:outline-none focus:border-primary/50 cursor-pointer">
             <!-- Dynamic Recipe Options -->
           </select>
           <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
         </div>
-        <div class="flex items-center gap-2 px-1 text-[11px] font-mono">
+        <div id="recipe-metadata" class="flex items-center gap-2 px-1 text-[11px] font-mono">
           <span id="recipe-variant-badge" class="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">원본</span>
           <span id="recipe-equipment" class="text-on-surface-variant">Hario V60</span>
-          <a id="recipe-source-link" href="#" target="_blank" rel="noopener noreferrer" class="ml-auto text-tertiary hover:underline">출처 보기</a>
+          <a id="recipe-source-link" href="#" target="_blank" rel="noopener noreferrer" class="ml-auto min-h-11 flex items-center text-tertiary hover:underline">출처 보기</a>
         </div>
       </div>
 
       <!-- Main Input Card: Bean Weight Stepper -->
       <section class="glass-card rounded-2xl p-6 flex flex-col items-center gap-4 relative overflow-hidden">
         <div class="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-2xl rounded-full"></div>
-        <span class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Coffee Amount (g)</span>
+        <label for="input-bean-weight" class="font-mono text-xs text-on-surface-variant tracking-widest">원두량 (g)</label>
         
         <div class="flex items-center justify-between w-full max-w-[280px]">
           <button id="btn-bean-minus" type="button" aria-label="원두량 0.5g 줄이기" class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary active:scale-90 transition-transform shadow-md">
@@ -144,7 +149,7 @@
           <div class="text-center cursor-pointer" id="bean-weight-display-container">
             <input type="number" id="input-bean-weight" aria-label="사용할 원두량" step="0.5" min="5" max="100" value="15.0" class="w-32 text-center font-display font-black text-5xl text-primary bg-transparent focus:outline-none focus:border-b-2 border-primary/50 p-0 m-0"/>
             <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
-              <span id="ratio-badge" class="font-mono text-xs text-primary font-semibold">1:15 Ratio</span>
+              <span id="ratio-badge" class="font-mono text-xs text-primary font-semibold">1:15 추출 비율</span>
             </div>
           </div>
           
@@ -159,15 +164,15 @@
 
         <!-- Hot / Ice Toggle -->
         <div class="w-full flex rounded-xl bg-surface-container-highest/60 p-1 border border-white/5 mt-2">
-          <button id="btn-type-hot" type="button" aria-pressed="true" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm">
-            <span class="material-symbols-outlined text-sm">local_cafe</span> HOT
+          <button id="btn-type-hot" type="button" aria-label="핫 추출 선택" aria-pressed="true" class="flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm">
+            <span class="material-symbols-outlined text-sm">local_cafe</span> 핫
           </button>
-          <button id="btn-type-ice" type="button" aria-pressed="false" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface">
-            <span class="material-symbols-outlined text-sm">ac_unit</span> ICE
+          <button id="btn-type-ice" type="button" aria-label="아이스 추출 선택" aria-pressed="false" class="flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface">
+            <span class="material-symbols-outlined text-sm">ac_unit</span> 아이스
           </button>
         </div>
         <p id="brew-mode-description" class="w-full text-center text-[11px] leading-relaxed text-on-surface-variant">
-          원본 HOT 레시피
+          원본 핫 레시피
         </p>
       </section>
 
@@ -190,7 +195,7 @@
           <span class="font-mono text-xs text-on-surface-variant uppercase">서버 얼음</span>
           <div class="flex items-baseline gap-1.5">
             <span id="ice-weight-display" class="font-display font-bold text-2xl text-on-surface">0g</span>
-            <span id="ice-badge" class="font-mono text-[10px] text-on-surface-variant opacity-60">HOT</span>
+            <span id="ice-badge" class="font-mono text-[10px] text-on-surface-variant opacity-60">핫</span>
           </div>
         </div>
 
@@ -203,7 +208,7 @@
         </div>
         
         <div class="glass-card rounded-xl p-4 flex flex-col gap-1 col-span-2">
-          <span class="font-mono text-xs text-on-surface-variant uppercase">Recommended Grind</span>
+          <span class="font-mono text-xs text-on-surface-variant">권장 분쇄도</span>
           <div class="flex items-center justify-between">
             <span id="grind-display" class="font-display font-semibold text-lg text-primary">코만단테 27클릭</span>
             <span class="material-symbols-outlined text-on-surface-variant text-base">tune</span>
@@ -214,8 +219,8 @@
       <!-- Step Breakdown List -->
       <section class="flex flex-col gap-3">
         <div class="flex justify-between items-center px-1">
-          <h3 class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Brew Sequence</h3>
-          <span id="total-time-display" class="font-mono text-xs text-primary">Total Time: 03:30</span>
+          <h3 class="font-mono text-xs text-on-surface-variant tracking-widest">추출 순서</h3>
+          <span id="total-time-display" class="font-mono text-xs text-primary">총 추출 시간 3:30</span>
         </div>
 
         <div id="step-list-container" class="flex flex-col gap-2.5">
@@ -231,23 +236,24 @@
       <!-- Top Progress Indicator -->
       <section class="mt-2 mb-3">
         <div class="flex justify-between items-end mb-2">
-          <p class="font-mono text-xs text-on-surface-variant uppercase tracking-widest">Extraction Progress</p>
-          <p id="timer-step-counter" class="font-mono text-xs text-primary font-bold">Step 1 of 5</p>
+          <p class="font-mono text-xs text-on-surface-variant tracking-widest">추출 진행률</p>
+          <p id="timer-step-counter" class="font-mono text-xs text-primary font-bold">1/5단계</p>
         </div>
         <div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
-          <div id="timer-progress-bar" class="h-full bg-primary-container progress-glow transition-all duration-300 ease-out" style="width: 20%"></div>
+          <div id="timer-progress-bar" role="progressbar" aria-label="추출 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" class="h-full bg-primary-container progress-glow transition-all duration-300 ease-out" style="width: 0%"></div>
         </div>
       </section>
 
       <!-- Hero Timer & Scale Target Section -->
       <section class="flex-grow flex flex-col items-center justify-center text-center my-4">
         <div class="mb-2">
-          <span id="timer-status-badge" class="font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow">READY</span>
+          <span id="timer-status-badge" role="status" aria-live="polite" class="font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow">준비</span>
+          <p id="timer-capability-status" class="mt-1 font-mono text-[10px] text-on-surface-variant"></p>
         </div>
         
         <!-- Huge Timer Display -->
         <div class="mb-4">
-          <h2 id="timer-display" class="text-[76px] leading-none font-display font-black text-brew-green tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(0,230,118,0.3)]">
+          <h2 id="timer-display" aria-live="off" class="text-[76px] leading-none font-display font-black text-brew-green tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(0,230,118,0.3)]">
             00:00
           </h2>
         </div>
@@ -273,7 +279,7 @@
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1.5">
                 <span class="w-2 h-2 rounded-full bg-brew-green animate-pulse"></span>
-                <span id="timer-step-title" class="font-mono text-xs text-brew-green font-bold">STEP 01 (BLOOM)</span>
+                <span id="timer-step-title" class="font-mono text-xs text-brew-green font-bold">1단계 (뜸들이기)</span>
               </div>
               
               <h3 id="timer-instruction" class="font-display text-xl font-bold text-on-surface leading-tight mb-3">
@@ -287,7 +293,7 @@
                 </div>
                 <div id="timer-step-switch-container" class="flex items-center gap-1.5 text-brew-green">
                   <span class="material-symbols-outlined text-base">valve</span>
-                  <span id="timer-step-switch" class="font-mono text-xs uppercase font-bold">Switch OPEN</span>
+                  <span id="timer-step-switch" class="font-mono text-xs font-bold">스위치 열림</span>
                 </div>
               </div>
             </div>
@@ -300,10 +306,10 @@
         <div class="glass-card p-4 rounded-xl opacity-70 border border-white/5">
           <div class="flex justify-between items-center">
             <div class="flex flex-col">
-              <span id="timer-next-label" class="font-mono text-[10px] text-on-surface-variant uppercase mb-0.5">Next: Step 2</span>
-              <p id="timer-next-desc" class="font-body text-sm font-medium text-on-surface">Pour 45g Water</p>
+              <span id="timer-next-label" class="font-mono text-[10px] text-on-surface-variant mb-0.5">다음: 2단계</span>
+              <p id="timer-next-desc" class="font-body text-sm font-medium text-on-surface">물 45g 주입</p>
             </div>
-            <span id="timer-next-time" class="font-mono text-xs text-on-surface-variant">at 00:45</span>
+            <span id="timer-next-time" class="font-mono text-xs text-on-surface-variant">0:45 시작</span>
           </div>
         </div>
       </section>
@@ -311,45 +317,45 @@
     </div>
 
     <!-- MODAL 1: ADD CUSTOM RECIPE -->
-    <div id="modal-add-recipe" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div id="modal-add-recipe" role="dialog" aria-modal="true" aria-labelledby="add-recipe-title" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
       <div class="glass-card rounded-2xl p-6 w-full max-w-sm border border-primary/30 my-8 shadow-2xl flex flex-col gap-4">
         
         <div class="flex justify-between items-center border-b border-white/10 pb-3">
-          <h3 class="font-display font-bold text-lg text-primary flex items-center gap-1.5">
+          <h3 id="add-recipe-title" class="font-display font-bold text-lg text-primary flex items-center gap-1.5">
             <span class="material-symbols-outlined">edit_note</span> 나만의 레시피 추가
           </h3>
-          <button id="btn-close-modal" class="text-on-surface-variant hover:text-white">
+          <button id="btn-close-modal" type="button" aria-label="레시피 추가 창 닫기" class="min-w-11 min-h-11 flex items-center justify-center text-on-surface-variant hover:text-white">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
         <form id="form-add-recipe" class="flex flex-col gap-3">
           <div>
-            <label class="font-mono text-xs text-on-surface-variant block mb-1">레시피 이름 *</label>
-            <input type="text" id="new-recipe-name" required maxlength="80" placeholder="예: 에티오피아 단맛 레시피" class="w-full bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-display text-sm text-white focus:outline-none focus:border-primary"/>
+            <label for="new-recipe-name" class="font-mono text-xs text-on-surface-variant block mb-1">레시피 이름 *</label>
+            <input type="text" id="new-recipe-name" required maxlength="80" placeholder="예: 에티오피아 단맛 레시피" class="w-full min-h-11 bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-display text-sm text-white focus:outline-none focus:border-primary"/>
           </div>
 
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="font-mono text-xs text-on-surface-variant block mb-1">기준 원두량 (g) *</label>
-              <input type="number" id="new-base-bean" required step="0.5" value="15.0" min="5" max="100" class="w-full bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-mono text-sm text-white focus:outline-none focus:border-primary"/>
+              <label for="new-base-bean" class="font-mono text-xs text-on-surface-variant block mb-1">기준 원두량 (g) *</label>
+              <input type="number" id="new-base-bean" required step="0.5" value="15.0" min="5" max="100" class="w-full min-h-11 bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-mono text-sm text-white focus:outline-none focus:border-primary"/>
             </div>
             <div>
-              <span class="font-mono text-xs text-on-surface-variant block mb-1">자동 계산 비율</span>
-              <output id="new-ratio-preview" class="w-full min-h-[42px] flex items-center bg-surface-container border border-white/10 rounded-xl px-3.5 py-2.5 font-mono text-sm text-primary">단계 물량 입력 후 계산</output>
+              <label for="new-ratio-preview" class="font-mono text-xs text-on-surface-variant block mb-1">자동 계산 비율</label>
+              <output id="new-ratio-preview" aria-live="polite" class="w-full min-h-11 flex items-center bg-surface-container border border-white/10 rounded-xl px-3.5 py-2.5 font-mono text-sm text-primary">단계 물량 입력 후 계산</output>
             </div>
           </div>
 
           <div>
-            <label class="font-mono text-xs text-on-surface-variant block mb-1">추천 분쇄도</label>
-            <input type="text" id="new-grind-size" placeholder="예: 코만단테 25클릭" class="w-full bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-display text-sm text-white focus:outline-none focus:border-primary"/>
+            <label for="new-grind-size" class="font-mono text-xs text-on-surface-variant block mb-1">추천 분쇄도</label>
+            <input type="text" id="new-grind-size" placeholder="예: 코만단테 25클릭" class="w-full min-h-11 bg-surface-container-highest border border-white/10 rounded-xl px-3.5 py-2.5 font-display text-sm text-white focus:outline-none focus:border-primary"/>
           </div>
 
           <!-- Stage Builder -->
           <div class="border-t border-white/10 pt-3">
             <div class="flex justify-between items-center mb-2">
-              <label class="font-mono text-xs text-primary font-bold uppercase tracking-wider">단계별 주입 설정 (Stages)</label>
-              <button type="button" id="btn-add-stage-row" class="text-primary hover:underline font-mono text-xs flex items-center gap-0.5">
+              <span class="font-mono text-xs text-primary font-bold tracking-wider">단계별 주입 설정</span>
+              <button type="button" id="btn-add-stage-row" class="min-h-11 px-2 text-primary hover:underline font-mono text-xs flex items-center gap-0.5">
                 <span class="material-symbols-outlined text-sm">add</span> 단계 추가
               </button>
             </div>
@@ -369,14 +375,14 @@
     </div>
 
     <!-- MODAL 2: BACKUP & RESTORE -->
-    <div id="modal-backup" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div id="modal-backup" role="dialog" aria-modal="true" aria-labelledby="backup-title" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
       <div class="glass-card rounded-2xl p-6 w-full max-w-sm border border-tertiary/30 shadow-2xl flex flex-col gap-4">
         
         <div class="flex justify-between items-center border-b border-white/10 pb-3">
-          <h3 class="font-display font-bold text-lg text-tertiary flex items-center gap-1.5">
+          <h3 id="backup-title" class="font-display font-bold text-lg text-tertiary flex items-center gap-1.5">
             <span class="material-symbols-outlined">cloud_sync</span> 레시피 백업 및 복원
           </h3>
-          <button id="btn-close-backup-modal" class="text-on-surface-variant hover:text-white">
+          <button id="btn-close-backup-modal" type="button" aria-label="백업 및 복원 창 닫기" class="min-w-11 min-h-11 flex items-center justify-center text-on-surface-variant hover:text-white">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -388,7 +394,7 @@
             <p class="text-xs text-on-surface-variant leading-relaxed">
               내 커스텀 레시피들을 데이터 파일(.json)로 내 휴대폰이나 컴퓨터에 안전하게 저장합니다.
             </p>
-            <button id="btn-export-json" class="mt-1 w-full py-2.5 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all">
+            <button id="btn-export-json" type="button" class="mt-1 w-full min-h-11 py-2.5 bg-primary/20 hover:bg-primary/30 border border-primary/40 text-primary font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all">
               <span class="material-symbols-outlined text-base">download</span> 레시피 파일 다운로드
             </button>
           </div>
@@ -400,13 +406,13 @@
               저장해둔 백업 파일(.json)을 가져와 내 레시피 목록으로 복원합니다.
             </p>
             <input type="file" id="input-import-file" accept=".json" class="hidden"/>
-            <button id="btn-trigger-import" class="mt-1 w-full py-2.5 bg-tertiary/20 hover:bg-tertiary/30 border border-tertiary/40 text-tertiary font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all">
-              <span class="material-symbols-outlined text-base">upload</span> 백업 파일 선택 & 복원
+            <button id="btn-trigger-import" type="button" class="mt-1 w-full min-h-11 py-2.5 bg-tertiary/20 hover:bg-tertiary/30 border border-tertiary/40 text-tertiary font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-base">upload</span> 백업 파일 선택 및 복원
             </button>
           </div>
         </div>
 
-        <button id="btn-cancel-backup-modal" class="w-full py-2.5 rounded-xl bg-surface-container-highest text-on-surface-variant font-display font-semibold text-xs">닫기</button>
+        <button id="btn-cancel-backup-modal" type="button" class="w-full min-h-11 py-2.5 rounded-xl bg-surface-container-highest text-on-surface-variant font-display font-semibold text-xs">닫기</button>
 
       </div>
     </div>
@@ -414,10 +420,10 @@
     <!-- BOTTOM ACTION BUTTONS -->
 
     <!-- Calculator Start FAB -->
-    <div id="calculator-action-bar" class="fixed bottom-20 left-0 w-full max-w-md left-1/2 -translate-x-1/2 px-5 z-30">
-      <button id="btn-start-brew" class="w-full bg-primary-container text-on-primary py-4 rounded-xl font-display font-bold text-lg shadow-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+    <div id="calculator-action-bar" class="fixed bottom-4 left-0 w-full max-w-md left-1/2 -translate-x-1/2 px-5 z-30">
+      <button id="btn-start-brew" type="button" class="w-full min-h-11 bg-primary-container text-on-primary py-4 rounded-xl font-display font-bold text-lg shadow-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
         <span class="material-symbols-outlined fill-icon text-2xl">play_arrow</span>
-        Start Brewing Timer
+        추출 타이머 시작
       </button>
     </div>
 
@@ -425,42 +431,42 @@
     <footer id="timer-control-bar" class="hidden fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/10 px-6 pb-8 pt-3">
       <div class="flex items-center justify-between gap-4">
         <!-- Stop Button -->
-        <button id="btn-timer-stop" class="flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-error transition-all active:scale-95">
+        <button id="btn-timer-stop" type="button" aria-label="추출 타이머 종료" class="min-w-11 min-h-11 flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-error transition-all active:scale-95">
           <div class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-container-highest mb-1">
             <span class="material-symbols-outlined">stop</span>
           </div>
-          <span class="text-[11px] font-mono">Stop</span>
+          <span class="text-[11px] font-mono">종료</span>
         </button>
         
         <!-- Play / Pause Main Button -->
-        <button id="btn-timer-toggle" class="flex-grow flex items-center justify-center gap-2 bg-brew-amber text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-amber/20 active:scale-[0.98] transition-all">
+        <button id="btn-timer-toggle" type="button" aria-label="추출 타이머 일시정지" class="min-h-11 flex-grow flex items-center justify-center gap-2 bg-brew-amber text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-amber/20 active:scale-[0.98] transition-all">
           <span class="material-symbols-outlined fill-icon" id="timer-toggle-icon">pause</span>
-          <span id="timer-toggle-text" class="uppercase tracking-widest text-sm">Pause Brew</span>
+          <span id="timer-toggle-text" class="tracking-widest text-sm">일시정지</span>
         </button>
 
         <!-- Skip Step Button -->
-        <button id="btn-timer-skip" class="flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-primary transition-all active:scale-95">
+        <button id="btn-timer-skip" type="button" aria-label="다음 추출 단계로 건너뛰기" class="min-w-11 min-h-11 flex flex-col items-center justify-center p-2 text-on-surface-variant hover:text-primary transition-all active:scale-95">
           <div class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-container-highest mb-1">
             <span class="material-symbols-outlined">skip_next</span>
           </div>
-          <span class="text-[11px] font-mono">Skip</span>
+          <span class="text-[11px] font-mono">다음 단계</span>
         </button>
       </div>
     </footer>
 
     <!-- Bottom Navigation Shell -->
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 w-full max-w-md left-1/2 -translate-x-1/2 z-20 bg-surface/80 backdrop-blur-2xl border-t border-white/10 flex justify-around items-center px-4 pb-5 pt-2">
+    <nav id="bottom-nav" aria-label="준비 중인 메뉴" class="hidden">
       <button class="flex flex-col items-center justify-center text-primary font-bold">
         <span class="material-symbols-outlined fill-icon">calculate</span>
-        <span class="font-mono text-[10px] mt-0.5">Calculator</span>
+        <span class="font-mono text-[10px] mt-0.5">계산기</span>
       </button>
       <button id="nav-recipes" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
         <span class="material-symbols-outlined">menu_book</span>
-        <span class="font-mono text-[10px] mt-0.5">Recipes</span>
+        <span class="font-mono text-[10px] mt-0.5">레시피</span>
       </button>
       <button id="nav-logs" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
         <span class="material-symbols-outlined">history</span>
-        <span class="font-mono text-[10px] mt-0.5">Logs</span>
+        <span class="font-mono text-[10px] mt-0.5">기록</span>
       </button>
     </nav>
 
@@ -566,7 +572,7 @@
         equipmentLabel: "V60",
         variantLabel: "앱 기본 아이스 변형",
         isVariant: true,
-        sourceLabel: "PourOver Pro 기본 변환 규칙",
+        sourceLabel: "드립노트 기본 변환 규칙",
         sourceUrl: null,
         recommendedDoseMin: 15,
         recommendedDoseMax: 30,
@@ -579,6 +585,7 @@
       }
     ];
 
+    // 기존 사용자의 저장 데이터를 유지하기 위해 레거시 키 이름은 변경하지 않는다.
     const STORAGE_KEY = "POUROVER_PRO_CUSTOM_RECIPES";
     const BACKUP_FORMAT = "drop-note-recipes";
     const BACKUP_VERSION = 1;
@@ -595,10 +602,15 @@
     let isIceMode = false;
     let soundEnabled = true;
     let wakeLock = null;
+    let wakeLockRequestPending = false;
 
     // Timer State
     let timerInterval = null;
     let timerRunning = false;
+    let timerCompleted = false;
+    let timerRunStartedAtMs = null;
+    let timerElapsedBeforeRunMs = 0;
+    let timerLastCountdownSecond = null;
     let totalSecondsElapsed = 0;
     let currentStepIndex = 0;
     let stepTimeRemaining = 0;
@@ -608,9 +620,16 @@
     let scaledFinalWater = 0;
 
     // Web Audio Synthesizer
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx = null;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioCtx = AudioContextClass ? new AudioContextClass() : null;
+    } catch (error) {
+      console.warn("오디오 알림을 초기화하지 못했습니다:", error);
+    }
+
     function playBeep(freq = 880, duration = 0.15, type = 'sine') {
-      if (!soundEnabled) return;
+      if (!soundEnabled || !audioCtx) return;
       try {
         if (audioCtx.state === 'suspended') {
           audioCtx.resume();
@@ -851,8 +870,8 @@
       return {
         badge: currentRecipe.variantLabel || (currentRecipe.isCustom ? "나만의 레시피" : "원본"),
         description: isIceMode
-          ? `ICE 레시피 · 추출수 1:${ICE_FALLBACK_POLICY.hotWaterRatio} + 얼음 1:${ICE_FALLBACK_POLICY.iceRatio}`
-          : (currentRecipe.isCustom ? "나만의 HOT 레시피" : "원본 HOT 레시피"),
+          ? `아이스 레시피 · 추출수 1:${ICE_FALLBACK_POLICY.hotWaterRatio} + 얼음 1:${ICE_FALLBACK_POLICY.iceRatio}`
+          : (currentRecipe.isCustom ? "나만의 핫 레시피" : "원본 핫 레시피"),
         isAppVariant: currentRecipe.isVariant === true || currentRecipe.isCustom
       };
     }
@@ -978,7 +997,7 @@
       document.getElementById("ratio-badge").textContent = `1:${formattedRatio} 추출 비율`;
       document.getElementById("total-water-display").textContent = `${scaledTotalWater}g`;
       document.getElementById("ice-weight-display").textContent = `${scaledIceWeight}g`;
-      document.getElementById("ice-badge").textContent = isIceMode ? "ICE" : "HOT";
+      document.getElementById("ice-badge").textContent = isIceMode ? "아이스" : "핫";
       document.getElementById("final-yield-display").textContent = `${scaledFinalWater}g`;
       const finalYieldCard = document.getElementById("final-yield-card");
       if (isIceMode) {
@@ -1007,7 +1026,7 @@
           header,
           "span",
           "font-mono text-xs text-primary font-bold",
-          `STEP ${stage.step.toString().padStart(2, "0")} (${stage.name})`
+          `${stage.step}단계 (${stage.name})`
         );
         appendTextElement(
           header,
@@ -1019,8 +1038,8 @@
 
         const details = document.createElement("div");
         details.className = `grid ${currentRecipe.equipment === "Hario Switch" ? "grid-cols-4" : "grid-cols-3"} gap-2`;
-        appendStepDetail(details, "WATER", `+${stage.scaledWater}g`);
-        appendStepDetail(details, "TEMP", `${stage.temp}°C`);
+        appendStepDetail(details, "물", `+${stage.scaledWater}g`);
+        appendStepDetail(details, "온도", `${stage.temp}°C`);
 
         const timing = document.createElement("div");
         timing.className = "flex flex-col";
@@ -1044,12 +1063,12 @@
         if (currentRecipe.equipment === "Hario Switch") {
           const switchDetail = document.createElement("div");
           switchDetail.className = "flex flex-col items-end";
-          appendTextElement(switchDetail, "span", "font-mono text-[10px] text-on-surface-variant", "SWITCH");
+          appendTextElement(switchDetail, "span", "font-mono text-[10px] text-on-surface-variant", "스위치");
           appendTextElement(
             switchDetail,
             "span",
             `font-mono text-xs font-bold ${stage.switch === "open" ? "text-tertiary" : "text-error"}`,
-            stage.switch.toUpperCase()
+            formatSwitchState(stage.switch)
           );
           details.appendChild(switchDetail);
         }
@@ -1073,6 +1092,10 @@
       appendTextElement(detail, "span", "font-mono text-[10px] text-on-surface-variant", label);
       appendTextElement(detail, "span", "font-display font-semibold text-base text-on-surface", value);
       parent.appendChild(detail);
+    }
+
+    function formatSwitchState(switchState) {
+      return switchState === "closed" ? "닫힘" : "열림";
     }
 
     // --- EVENT BINDINGS ---
@@ -1134,6 +1157,10 @@
       document.getElementById("btn-sound-toggle").addEventListener("click", () => {
         soundEnabled = !soundEnabled;
         document.getElementById("sound-icon").textContent = soundEnabled ? "volume_up" : "volume_off";
+        document.getElementById("btn-sound-toggle").setAttribute(
+          "aria-label",
+          soundEnabled ? "소리 알림 끄기" : "소리 알림 켜기"
+        );
         playBeep(1000, 0.1);
       });
 
@@ -1149,12 +1176,18 @@
       // Backup & Restore Modal Events
       document.getElementById("btn-open-backup-modal").addEventListener("click", () => {
         document.getElementById("modal-backup").classList.remove("hidden");
+        document.getElementById("btn-open-backup-modal").setAttribute("aria-expanded", "true");
+        document.getElementById("btn-close-backup-modal").focus?.();
       });
       document.getElementById("btn-close-backup-modal").addEventListener("click", () => {
         document.getElementById("modal-backup").classList.add("hidden");
+        document.getElementById("btn-open-backup-modal").setAttribute("aria-expanded", "false");
+        document.getElementById("btn-open-backup-modal").focus?.();
       });
       document.getElementById("btn-cancel-backup-modal").addEventListener("click", () => {
         document.getElementById("modal-backup").classList.add("hidden");
+        document.getElementById("btn-open-backup-modal").setAttribute("aria-expanded", "false");
+        document.getElementById("btn-open-backup-modal").focus?.();
       });
 
       // Backup Export JSON
@@ -1171,6 +1204,7 @@
       document.getElementById("btn-timer-stop").addEventListener("click", stopTimerView);
       document.getElementById("btn-timer-toggle").addEventListener("click", toggleTimerPlayPause);
       document.getElementById("btn-timer-skip").addEventListener("click", skipToNextStep);
+      document.addEventListener("visibilitychange", handleTimerVisibilityChange);
     }
 
     // --- BACKUP (EXPORT) & RESTORE (IMPORT) LOGIC ---
@@ -1351,7 +1385,7 @@
         throw new Error("올바른 백업 데이터가 아닙니다.");
       }
       if (payload.format !== BACKUP_FORMAT) {
-        throw new Error("Drop Note 백업 파일이 아닙니다.");
+        throw new Error("드립노트 백업 파일이 아닙니다.");
       }
       if (payload.version !== BACKUP_VERSION) {
         throw new Error(`지원하지 않는 백업 버전입니다. 현재 지원 버전: ${BACKUP_VERSION}`);
@@ -1392,7 +1426,7 @@
       const downloadAnchor = document.createElement('a');
       const today = new Date().toISOString().slice(0,10);
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `pourover_recipes_backup_${today}.json`);
+      downloadAnchor.setAttribute("download", `dripnote_recipes_backup_${today}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1417,6 +1451,7 @@
 
           alert(`총 ${importedRecipes.length}개의 레시피를 성공적으로 복원했습니다!`);
           document.getElementById("modal-backup").classList.add("hidden");
+          document.getElementById("btn-open-backup-modal").setAttribute("aria-expanded", "false");
           playBeep(1500, 0.3);
         } catch (err) {
           alert("백업 파일 읽기 실패: " + err.message);
@@ -1507,6 +1542,7 @@
 
     function openAddRecipeModal() {
       document.getElementById("modal-add-recipe").classList.remove("hidden");
+      document.getElementById("btn-open-add-modal").setAttribute("aria-expanded", "true");
       document.getElementById("form-add-recipe").reset();
       const container = document.getElementById("modal-stages-container");
       container.innerHTML = "";
@@ -1514,40 +1550,44 @@
       addStageRowInModal("2차 메인 주입", 80, 92, 45, "open");
       addStageRowInModal("3차 마무리 주입", 80, 90, 45, "open");
       updateCustomRecipePreview();
+      document.getElementById("new-recipe-name").focus?.();
     }
 
     function closeAddRecipeModal() {
       document.getElementById("modal-add-recipe").classList.add("hidden");
+      document.getElementById("btn-open-add-modal").setAttribute("aria-expanded", "false");
+      document.getElementById("btn-open-add-modal").focus?.();
     }
 
     function addStageRowInModal(defaultName = "", defaultWater = 50, defaultTemp = 92, defaultTime = 45, defaultSwitch = "open") {
       const container = document.getElementById("modal-stages-container");
       const index = container.children.length + 1;
+      const rowId = `stage-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const row = document.createElement("div");
       row.className = "stage-builder-row bg-surface-container border border-white/5 rounded-xl p-2.5 flex flex-col gap-2 relative";
       row.innerHTML = `
         <div class="flex justify-between items-center">
-          <span class="font-mono text-[11px] text-primary font-bold">Step ${index}</span>
-          <button type="button" class="btn-remove-stage-row text-error hover:text-white font-mono text-[10px]">삭제</button>
+          <span class="font-mono text-[11px] text-primary font-bold">${index}단계</span>
+          <button type="button" aria-label="${index}단계 삭제" class="btn-remove-stage-row min-h-11 px-2 text-error hover:text-white font-mono text-[10px]">삭제</button>
         </div>
         <div class="grid grid-cols-2 gap-2">
-          <input type="text" maxlength="80" class="stage-name bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs text-white" placeholder="단계 이름" value="${defaultName || '주입 ' + index}"/>
-          <input type="number" min="0" max="1000" step="1" class="stage-water bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs font-mono text-white" placeholder="물량(g)" value="${defaultWater}"/>
+          <input type="text" maxlength="80" aria-label="${index}단계 이름" class="stage-name min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs text-white" placeholder="단계 이름" value="${defaultName || '주입 ' + index}"/>
+          <input type="number" min="0" max="1000" step="1" aria-label="${index}단계 물량" class="stage-water min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs font-mono text-white" placeholder="물량(g)" value="${defaultWater}"/>
         </div>
         <div class="grid grid-cols-3 gap-1.5">
           <div>
-            <span class="font-mono text-[9px] text-on-surface-variant block">온도(°C)</span>
-            <input type="number" min="40" max="100" step="1" class="stage-temp bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTemp}"/>
+            <label for="${rowId}-temp" class="font-mono text-[9px] text-on-surface-variant block">온도(°C)</label>
+            <input id="${rowId}-temp" type="number" min="40" max="100" step="1" aria-label="${index}단계 온도" class="stage-temp min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTemp}"/>
           </div>
           <div>
-            <span class="font-mono text-[9px] text-on-surface-variant block">시간(초)</span>
-            <input type="number" min="1" max="600" step="1" class="stage-time bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTime}"/>
+            <label for="${rowId}-time" class="font-mono text-[9px] text-on-surface-variant block">시간(초)</label>
+            <input id="${rowId}-time" type="number" min="1" max="600" step="1" aria-label="${index}단계 시간" class="stage-time min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white" value="${defaultTime}"/>
           </div>
           <div>
-            <span class="font-mono text-[9px] text-on-surface-variant block">스위치</span>
-            <select class="stage-switch bg-surface-container-highest border border-white/5 rounded-lg px-1 py-1 text-xs font-mono text-white">
-              <option value="open" ${defaultSwitch === 'open' ? 'selected' : ''}>OPEN</option>
-              <option value="closed" ${defaultSwitch === 'closed' ? 'selected' : ''}>CLOSED</option>
+            <label for="${rowId}-switch" class="font-mono text-[9px] text-on-surface-variant block">스위치</label>
+            <select id="${rowId}-switch" aria-label="${index}단계 스위치 상태" class="stage-switch min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1 py-1 text-xs font-mono text-white">
+              <option value="open" ${defaultSwitch === 'open' ? 'selected' : ''}>열림</option>
+              <option value="closed" ${defaultSwitch === 'closed' ? 'selected' : ''}>닫힘</option>
             </select>
           </div>
         </div>
@@ -1633,19 +1673,30 @@
       btnIce.setAttribute("aria-pressed", isIceMode.toString());
 
       if (isIceMode) {
-        btnIce.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-tertiary text-surface shadow-sm";
+        btnIce.className = "flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-tertiary text-surface shadow-sm";
         btnHot.className = hotUnavailable
-          ? "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 text-on-surface-variant opacity-40 cursor-not-allowed"
-          : "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
+          ? "flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 text-on-surface-variant opacity-40 cursor-not-allowed"
+          : "flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
       } else {
-        btnHot.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm";
-        btnIce.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
+        btnHot.className = "flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm";
+        btnIce.className = "flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
       }
     }
 
     // --- TIMER ENGINE & LIVE VIEW ---
     function getTotalBrewTime() {
       return scaledStages.reduce((max, stage) => Math.max(max, stage.stepEndSec), 0);
+    }
+
+    function getCurrentTimeMs() {
+      return Date.now();
+    }
+
+    function getTimerElapsedMs(nowMs = getCurrentTimeMs()) {
+      if (!timerRunning || timerRunStartedAtMs === null) {
+        return timerElapsedBeforeRunMs;
+      }
+      return timerElapsedBeforeRunMs + Math.max(0, nowMs - timerRunStartedAtMs);
     }
 
     function syncTimerStepToElapsed() {
@@ -1658,76 +1709,136 @@
     }
 
     function startTimerView() {
-      requestWakeLock();
+      if (scaledStages.length === 0) return;
 
       document.getElementById("view-calculator").classList.add("hidden");
       document.getElementById("calculator-action-bar").classList.add("hidden");
-      document.getElementById("bottom-nav").classList.add("hidden");
 
       document.getElementById("view-timer").classList.remove("hidden");
       document.getElementById("timer-control-bar").classList.remove("hidden");
 
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerRunning = false;
+      timerCompleted = false;
+      timerRunStartedAtMs = null;
+      timerElapsedBeforeRunMs = 0;
+      timerLastCountdownSecond = null;
       totalSecondsElapsed = 0;
       currentStepIndex = 0;
       stepTimeRemaining = scaledStages[0].stepEndSec;
 
+      resetTimerControls();
+      updateTimerCapabilityStatus();
       renderTimerStep();
       startTimerInterval();
     }
 
     function stopTimerView() {
+      const needsConfirmation = !timerCompleted && (timerRunning || totalSecondsElapsed > 0);
+      if (needsConfirmation && !confirm("추출 타이머를 종료할까요? 현재 진행 상황은 저장되지 않습니다.")) {
+        return false;
+      }
+
       releaseWakeLock();
       clearInterval(timerInterval);
+      timerInterval = null;
       timerRunning = false;
+      timerCompleted = false;
+      timerRunStartedAtMs = null;
+      timerElapsedBeforeRunMs = 0;
+      timerLastCountdownSecond = null;
 
       document.getElementById("view-timer").classList.add("hidden");
       document.getElementById("timer-control-bar").classList.add("hidden");
 
       document.getElementById("view-calculator").classList.remove("hidden");
       document.getElementById("calculator-action-bar").classList.remove("hidden");
-      document.getElementById("bottom-nav").classList.remove("hidden");
+      return true;
     }
 
-    function startTimerInterval() {
+    function scheduleTimerTicks() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(timerTick, 250);
+    }
+
+    function startTimerInterval(nowMs = getCurrentTimeMs()) {
+      if (timerRunning || timerCompleted) return false;
+
+      timerRunStartedAtMs = nowMs;
       timerRunning = true;
+      timerLastCountdownSecond = null;
       updatePlayPauseButtonUI();
-      document.getElementById("timer-status-badge").textContent = "LIVE BREW";
+      document.getElementById("timer-status-badge").textContent = "추출 중";
       document.getElementById("timer-status-badge").className = "font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow";
-      playBeep(880, 0.2);
+      scheduleTimerTicks();
+      requestWakeLock();
+      if (timerElapsedBeforeRunMs === 0) playBeep(880, 0.2);
+      return true;
+    }
 
-      timerInterval = setInterval(() => {
-        totalSecondsElapsed++;
-        const previousStepIndex = currentStepIndex;
+    function timerTick(nowMs = getCurrentTimeMs()) {
+      if (!timerRunning || timerCompleted) return false;
 
-        if (!syncTimerStepToElapsed()) {
-          finishBrewing();
-          return;
-        }
+      const previousStepIndex = currentStepIndex;
+      const totalBrewTime = getTotalBrewTime();
+      const elapsedMs = getTimerElapsedMs(nowMs);
+      totalSecondsElapsed = Math.min(totalBrewTime, Math.floor(elapsedMs / 1000));
 
-        if (currentStepIndex !== previousStepIndex) {
-          playBeep(1200, 0.3);
-          if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
-        } else if (stepTimeRemaining <= 3 && stepTimeRemaining > 0) {
-          playBeep(600, 0.1);
-          if (navigator.vibrate) navigator.vibrate(100);
-        }
+      if (totalSecondsElapsed >= totalBrewTime || !syncTimerStepToElapsed()) {
+        finishBrewing();
+        return false;
+      }
 
-        renderTimerStep();
-      }, 1000);
+      if (currentStepIndex !== previousStepIndex) {
+        timerLastCountdownSecond = null;
+        playBeep(1200, 0.3);
+        if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+      } else if (
+        stepTimeRemaining <= 3 &&
+        stepTimeRemaining > 0 &&
+        timerLastCountdownSecond !== stepTimeRemaining
+      ) {
+        timerLastCountdownSecond = stepTimeRemaining;
+        playBeep(600, 0.1);
+        if (navigator.vibrate) navigator.vibrate(100);
+      }
+
+      renderTimerStep();
+      return true;
+    }
+
+    function pauseTimer(nowMs = getCurrentTimeMs()) {
+      if (!timerRunning || timerCompleted) return false;
+
+      timerElapsedBeforeRunMs = getTimerElapsedMs(nowMs);
+      timerRunStartedAtMs = null;
+      timerRunning = false;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      releaseWakeLock();
+
+      const totalBrewTime = getTotalBrewTime();
+      totalSecondsElapsed = Math.min(totalBrewTime, Math.floor(timerElapsedBeforeRunMs / 1000));
+      if (totalSecondsElapsed >= totalBrewTime || !syncTimerStepToElapsed()) {
+        finishBrewing();
+        return false;
+      }
+
+      document.getElementById("timer-status-badge").textContent = "일시정지";
+      document.getElementById("timer-status-badge").className = "font-mono text-xs text-primary font-bold tracking-widest";
+      updatePlayPauseButtonUI();
+      renderTimerStep();
+      return true;
     }
 
     function toggleTimerPlayPause() {
+      if (timerCompleted) return;
       if (timerRunning) {
-        clearInterval(timerInterval);
-        timerRunning = false;
-        document.getElementById("timer-status-badge").textContent = "PAUSED";
-        document.getElementById("timer-status-badge").className = "font-mono text-xs text-primary font-bold tracking-widest";
+        pauseTimer();
       } else {
         startTimerInterval();
-        document.getElementById("timer-status-badge").textContent = "LIVE BREW";
-        document.getElementById("timer-status-badge").className = "font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow";
       }
-      updatePlayPauseButtonUI();
     }
 
     function updatePlayPauseButtonUI() {
@@ -1735,40 +1846,86 @@
       const text = document.getElementById("timer-toggle-text");
       const btn = document.getElementById("btn-timer-toggle");
 
+      if (timerCompleted) {
+        icon.textContent = "check";
+        text.textContent = "추출 완료";
+        btn.disabled = true;
+        btn.setAttribute("aria-disabled", "true");
+        btn.setAttribute("aria-label", "추출 완료");
+        btn.className = "min-h-11 flex-grow flex items-center justify-center gap-2 bg-surface-container-highest text-on-surface-variant py-3.5 px-6 rounded-2xl font-mono font-bold opacity-60 cursor-not-allowed";
+        return;
+      }
+
+      btn.disabled = false;
+      btn.setAttribute("aria-disabled", "false");
       if (timerRunning) {
         icon.textContent = "pause";
-        text.textContent = "Pause Brew";
-        btn.className = "flex-grow flex items-center justify-center gap-2 bg-brew-amber text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-amber/20 active:scale-[0.98] transition-all";
+        text.textContent = "일시정지";
+        btn.setAttribute("aria-label", "추출 타이머 일시정지");
+        btn.className = "min-h-11 flex-grow flex items-center justify-center gap-2 bg-brew-amber text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-amber/20 active:scale-[0.98] transition-all";
       } else {
         icon.textContent = "play_arrow";
-        text.textContent = "Resume Brew";
-        btn.className = "flex-grow flex items-center justify-center gap-2 bg-brew-green text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-green/20 active:scale-[0.98] transition-all";
+        text.textContent = "다시 시작";
+        btn.setAttribute("aria-label", "추출 타이머 다시 시작");
+        btn.className = "min-h-11 flex-grow flex items-center justify-center gap-2 bg-brew-green text-surface-dim py-3.5 px-6 rounded-2xl font-mono font-bold shadow-lg shadow-brew-green/20 active:scale-[0.98] transition-all";
       }
     }
 
+    function resetTimerControls() {
+      const skipButton = document.getElementById("btn-timer-skip");
+      skipButton.disabled = false;
+      skipButton.setAttribute("aria-disabled", "false");
+      skipButton.classList.remove("opacity-40", "cursor-not-allowed");
+      updatePlayPauseButtonUI();
+    }
+
     function skipToNextStep() {
+      if (timerCompleted) return false;
       if (currentStepIndex < scaledStages.length - 1) {
         currentStepIndex++;
         totalSecondsElapsed = scaledStages[currentStepIndex].startSec;
+        timerElapsedBeforeRunMs = totalSecondsElapsed * 1000;
+        if (timerRunning) timerRunStartedAtMs = getCurrentTimeMs();
         stepTimeRemaining = scaledStages[currentStepIndex].stepEndSec - totalSecondsElapsed;
+        timerLastCountdownSecond = null;
         playBeep(1000, 0.15);
         renderTimerStep();
+        return true;
       } else {
         finishBrewing();
+        return false;
       }
     }
 
     function finishBrewing() {
+      if (timerCompleted) return false;
+
       clearInterval(timerInterval);
+      timerInterval = null;
       timerRunning = false;
+      timerCompleted = true;
+      timerRunStartedAtMs = null;
+      totalSecondsElapsed = getTotalBrewTime();
+      timerElapsedBeforeRunMs = totalSecondsElapsed * 1000;
+      stepTimeRemaining = 0;
+      currentStepIndex = Math.max(0, scaledStages.length - 1);
+      releaseWakeLock();
       playBeep(1500, 0.5, 'triangle');
       if (navigator.vibrate) navigator.vibrate([200, 100, 300]);
 
-      document.getElementById("timer-display").textContent = "DONE!";
-      document.getElementById("timer-status-badge").textContent = "BREW COMPLETE";
+      document.getElementById("timer-display").textContent = "완료";
+      document.getElementById("timer-status-badge").textContent = "추출 완료";
       document.getElementById("timer-status-badge").className = "font-mono text-xs text-primary font-bold tracking-widest";
       document.getElementById("timer-instruction").textContent = "☕ 맛있는 드립 커피가 완성되었습니다!";
       document.getElementById("timer-progress-bar").style.width = "100%";
+      document.getElementById("timer-progress-bar").setAttribute("aria-valuenow", "100");
+      document.getElementById("timer-step-counter").textContent = `${scaledStages.length}/${scaledStages.length}단계`;
+      const skipButton = document.getElementById("btn-timer-skip");
+      skipButton.disabled = true;
+      skipButton.setAttribute("aria-disabled", "true");
+      skipButton.classList.add("opacity-40", "cursor-not-allowed");
+      updatePlayPauseButtonUI();
+      return true;
     }
 
     function renderTimerStep() {
@@ -1782,7 +1939,8 @@
         ? Math.min(100, Math.round((totalSecondsElapsed / totalBrewTime) * 100))
         : 0;
       document.getElementById("timer-progress-bar").style.width = `${progressPct}%`;
-      document.getElementById("timer-step-counter").textContent = `Step ${currentStepIndex + 1} of ${totalSteps}`;
+      document.getElementById("timer-progress-bar").setAttribute("aria-valuenow", progressPct.toString());
+      document.getElementById("timer-step-counter").textContent = `${currentStepIndex + 1}/${totalSteps}단계`;
 
       const guidedTarget = getGuidedTarget(st, totalSecondsElapsed);
       document.getElementById("timer-target-scale").textContent = guidedTarget;
@@ -1790,7 +1948,7 @@
         ? `+${st.scaledWater}g`
         : "물 주입 없음";
 
-      document.getElementById("timer-step-title").textContent = `STEP ${st.step.toString().padStart(2, '0')} (${st.name})`;
+      document.getElementById("timer-step-title").textContent = `${st.step}단계 (${st.name})`;
       const isPouring = st.scaledWater > 0 && totalSecondsElapsed < st.pourEndSec;
       if (isPouring && st.guideMode === "linear") {
         setTimerInstruction([
@@ -1815,14 +1973,14 @@
       const switchContainer = document.getElementById("timer-step-switch-container");
       if (currentRecipe.equipment === "Hario Switch") {
         switchContainer.classList.remove("hidden");
-        document.getElementById("timer-step-switch").textContent = `Switch ${st.switch.toUpperCase()}`;
+        document.getElementById("timer-step-switch").textContent = `스위치 ${formatSwitchState(st.switch)}`;
       } else {
         switchContainer.classList.add("hidden");
       }
 
       if (currentStepIndex < totalSteps - 1) {
         const nextSt = scaledStages[currentStepIndex + 1];
-        document.getElementById("timer-next-label").textContent = `다음: STEP ${nextSt.step}`;
+        document.getElementById("timer-next-label").textContent = `다음: ${nextSt.step}단계`;
         document.getElementById("timer-next-desc").textContent = nextSt.scaledWater > 0
           ? `${nextSt.name} · +${nextSt.scaledWater}g`
           : nextSt.name;
@@ -1848,20 +2006,83 @@
     }
 
     // --- WAKE LOCK API ---
-    async function requestWakeLock() {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
+    function updateTimerCapabilityStatus(message = "") {
+      const status = document.getElementById("timer-capability-status");
+      if (message) {
+        status.textContent = message;
+        return;
+      }
+
+      const unavailable = [];
+      if (!audioCtx) unavailable.push("소리");
+      if (!("vibrate" in navigator)) unavailable.push("진동");
+      if (!("wakeLock" in navigator)) unavailable.push("화면 꺼짐 방지");
+      status.textContent = unavailable.length > 0
+        ? `${unavailable.join("·")} 미지원 · 복귀 시 시간 자동 보정`
+        : "화면 꺼짐 방지 사용 · 복귀 시 시간 자동 보정";
+    }
+
+    function handleTimerVisibilityChange() {
+      if (!timerRunning || timerCompleted) return;
+
+      if (document.visibilityState === "hidden") {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        releaseWakeLock();
+        updateTimerCapabilityStatus("백그라운드 진입 · 복귀 시 실제 경과 시간으로 보정");
+        return;
+      }
+
+      if (document.visibilityState === "visible") {
+        timerTick();
+        if (timerRunning && !timerCompleted) {
+          scheduleTimerTicks();
+          requestWakeLock();
+          updateTimerCapabilityStatus();
         }
-      } catch (err) {
-        console.log('Wake lock failed:', err);
       }
     }
 
-    function releaseWakeLock() {
-      if (wakeLock !== null) {
-        wakeLock.release();
-        wakeLock = null;
+    async function requestWakeLock() {
+      if (!("wakeLock" in navigator)) {
+        updateTimerCapabilityStatus();
+        return false;
+      }
+      if (wakeLock) return true;
+      if (wakeLockRequestPending) return false;
+
+      wakeLockRequestPending = true;
+      try {
+        const requestedLock = await navigator.wakeLock.request("screen");
+        if (!timerRunning || timerCompleted || document.visibilityState === "hidden") {
+          await requestedLock.release();
+          return false;
+        }
+        wakeLock = requestedLock;
+        if (typeof requestedLock.addEventListener === "function") {
+          requestedLock.addEventListener("release", () => {
+            if (wakeLock === requestedLock) wakeLock = null;
+          });
+        }
+        updateTimerCapabilityStatus();
+        return true;
+      } catch (err) {
+        console.warn("화면 꺼짐 방지를 사용할 수 없습니다:", err);
+        updateTimerCapabilityStatus("화면 꺼짐 방지 실패 · 복귀 시 시간 자동 보정");
+        return false;
+      } finally {
+        wakeLockRequestPending = false;
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (!wakeLock) return;
+      const lockToRelease = wakeLock;
+      wakeLock = null;
+      try {
+        await lockToRelease.release();
+      } catch (err) {
+        console.warn("화면 꺼짐 방지 해제에 실패했습니다:", err);
       }
     }
   </script>

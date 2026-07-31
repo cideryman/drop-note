@@ -124,6 +124,11 @@
           </select>
           <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
         </div>
+        <div class="flex items-center gap-2 px-1 text-[11px] font-mono">
+          <span id="recipe-variant-badge" class="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">원본</span>
+          <span id="recipe-equipment" class="text-on-surface-variant">Hario V60</span>
+          <a id="recipe-source-link" href="#" target="_blank" rel="noopener noreferrer" class="ml-auto text-tertiary hover:underline">출처 보기</a>
+        </div>
       </div>
 
       <!-- Main Input Card: Bean Weight Stepper -->
@@ -150,13 +155,16 @@
 
         <!-- Hot / Ice Toggle -->
         <div class="w-full flex rounded-xl bg-surface-container-highest/60 p-1 border border-white/5 mt-2">
-          <button id="btn-type-hot" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm">
+          <button id="btn-type-hot" type="button" aria-pressed="true" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm">
             <span class="material-symbols-outlined text-sm">local_cafe</span> HOT
           </button>
-          <button id="btn-type-ice" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface">
+          <button id="btn-type-ice" type="button" aria-pressed="false" class="flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface">
             <span class="material-symbols-outlined text-sm">ac_unit</span> ICE
           </button>
         </div>
+        <p id="brew-mode-description" class="w-full text-center text-[11px] leading-relaxed text-on-surface-variant">
+          원본 HOT 레시피
+        </p>
       </section>
 
       <!-- Warning Banner (Conditional) -->
@@ -170,16 +178,24 @@
       <!-- Summary Grid -->
       <section class="grid grid-cols-2 gap-3">
         <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
-          <span class="font-mono text-xs text-on-surface-variant uppercase">Total Water</span>
+          <span class="font-mono text-xs text-on-surface-variant uppercase">추출수</span>
           <span id="total-water-display" class="font-display font-bold text-2xl text-primary">225g</span>
         </div>
         
         <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
-          <span class="font-mono text-xs text-on-surface-variant uppercase">Ice Weight</span>
+          <span class="font-mono text-xs text-on-surface-variant uppercase">서버 얼음</span>
           <div class="flex items-baseline gap-1.5">
             <span id="ice-weight-display" class="font-display font-bold text-2xl text-on-surface">0g</span>
             <span id="ice-badge" class="font-mono text-[10px] text-on-surface-variant opacity-60">HOT</span>
           </div>
+        </div>
+
+        <div id="final-yield-card" class="hidden glass-card rounded-xl p-4 col-span-2 items-center justify-between">
+          <div class="flex flex-col gap-0.5">
+            <span class="font-mono text-xs text-on-surface-variant uppercase">최종 예상량</span>
+            <span class="text-[11px] text-on-surface-variant">추출수 + 서버 얼음</span>
+          </div>
+          <span id="final-yield-display" class="font-display font-bold text-2xl text-tertiary">0g</span>
         </div>
         
         <div class="glass-card rounded-xl p-4 flex flex-col gap-1 col-span-2">
@@ -234,7 +250,7 @@
 
         <!-- Scale Target Display -->
         <div class="glass-card px-6 py-4 rounded-2xl border-brew-amber/30 w-full max-w-xs shadow-xl">
-          <p class="font-mono text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">Target Scale Weight (저울 목표 중량)</p>
+          <p class="font-mono text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">현재 권장 저울 목표</p>
           <div class="flex items-baseline justify-center gap-1.5">
             <span id="timer-target-scale" class="text-4xl font-display font-black text-brew-amber tabular-nums">45</span>
             <span class="text-lg font-mono text-brew-amber/70 font-bold">g</span>
@@ -265,7 +281,7 @@
                   <span class="material-symbols-outlined text-base">thermostat</span>
                   <span id="timer-step-temp" class="font-mono text-xs">92°C</span>
                 </div>
-                <div class="flex items-center gap-1.5 text-brew-green">
+                <div id="timer-step-switch-container" class="flex items-center gap-1.5 text-brew-green">
                   <span class="material-symbols-outlined text-base">valve</span>
                   <span id="timer-step-switch" class="font-mono text-xs uppercase font-bold">Switch OPEN</span>
                 </div>
@@ -460,65 +476,103 @@
         id: "kasuya_46",
         name: "하리오 V60 4:6 (카스야 테츠)",
         baseBeanWeight: 20,
-        grindBase: "코만단테 27클릭 (굵게)",
+        grindBase: "굵게 (원두와 추출 시간에 맞춰 조절)",
         type: "hot",
         ratioText: "1:15",
+        equipment: "Hario V60",
+        variantLabel: "원본 균형형",
+        isVariant: false,
+        sourceLabel: "HARIO 공식 4:6 Method",
+        sourceUrl: "https://www.youtube.com/watch?v=wmCW8xSWGZY",
+        recommendedDoseMin: 15,
+        recommendedDoseMax: 30,
         isCustom: false,
         stages: [
-          { step: 1, name: "1차 주입 (산미)", water: 60, temp: 92, time: 45, switch: "open" },
-          { step: 2, name: "2차 주입 (단맛)", water: 60, temp: 92, time: 45, switch: "open" },
-          { step: 3, name: "3차 주입 (바디감)", water: 45, temp: 90, time: 45, switch: "open" },
-          { step: 4, name: "4차 주입 (농도)", water: 45, temp: 90, time: 45, switch: "open" },
-          { step: 5, name: "5차 주입 (완료)", water: 45, temp: 90, time: 30, switch: "open" }
+          { step: 1, name: "1차 주입 (맛의 균형)", action: "pour", water: 60, temp: 92, startSec: 0, pourEndSec: 10, stepEndSec: 45, guideMode: "immediate", switch: "open" },
+          { step: 2, name: "2차 주입 (맛의 균형)", action: "pour", water: 60, temp: 92, startSec: 45, pourEndSec: 55, stepEndSec: 90, guideMode: "immediate", switch: "open" },
+          { step: 3, name: "3차 주입 (농도 조절)", action: "pour", water: 60, temp: 92, startSec: 90, pourEndSec: 100, stepEndSec: 135, guideMode: "immediate", switch: "open" },
+          { step: 4, name: "4차 주입 (농도 조절)", action: "pour", water: 60, temp: 92, startSec: 135, pourEndSec: 145, stepEndSec: 180, guideMode: "immediate", switch: "open" },
+          { step: 5, name: "5차 주입 및 드로우다운", action: "pour", water: 60, temp: 92, startSec: 180, pourEndSec: 190, stepEndSec: 210, guideMode: "immediate", switch: "open" }
         ]
       },
       {
         id: "hario_switch_sweet",
-        name: "하리오 스위치 스위트 레시피",
+        name: "테츠 카스야 Switch Devil (하이브리드)",
         baseBeanWeight: 20,
-        grindBase: "코만단테 24클릭 (중굵게)",
+        grindBase: "중미세 (일반 V60보다 가늘게)",
         type: "hot",
         ratioText: "1:14",
+        equipment: "Hario Switch",
+        variantLabel: "원본 재현",
+        isVariant: false,
+        sourceLabel: "Tetsu Kasuya Switch 레시피 정리",
+        sourceUrl: "https://comoricoffee.com/en/kasuyas-hario-switch-recipe-en/",
+        recommendedDoseMin: 15,
+        recommendedDoseMax: 25,
         isCustom: false,
         stages: [
-          { step: 1, name: "1차 투과 주입", water: 60, temp: 93, time: 45, switch: "open" },
-          { step: 2, name: "2차 투과 주입", water: 60, temp: 93, time: 45, switch: "open" },
-          { step: 3, name: "3차 침출 (스위치 닫음)", water: 80, temp: 70, time: 60, switch: "closed" },
-          { step: 4, name: "스위치 열고 드롭다운", water: 0, temp: 70, time: 40, switch: "open" }
+          { step: 1, name: "1차 투과 주입", action: "pour", water: 60, temp: 90, startSec: 0, pourEndSec: 10, stepEndSec: 30, guideMode: "immediate", switch: "open" },
+          { step: 2, name: "2차 투과 주입 (누적 120g)", action: "pour", water: 60, temp: 90, startSec: 30, pourEndSec: 40, stepEndSec: 75, guideMode: "immediate", switch: "open" },
+          { step: 3, name: "저온 침출 (누적 280g)", action: "pour", water: 160, temp: 70, startSec: 75, pourEndSec: 90, stepEndSec: 105, guideMode: "immediate", switch: "closed" },
+          { step: 4, name: "스위치 열고 드로우다운", action: "open-switch", water: 0, temp: 70, startSec: 105, pourEndSec: 105, stepEndSec: 180, guideMode: "event", switch: "open" }
         ]
       },
       {
         id: "james_hoffmann_v60",
-        name: "제임스 호프만 Ultimate V60",
+        name: "제임스 호프만 Ultimate V60 (15g 변형)",
         baseBeanWeight: 15,
-        grindBase: "코만단테 18클릭 (중미세)",
+        sourceBaseBeanWeight: 30,
+        grindBase: "중미세 (추출 시간에 맞춰 조절)",
         type: "hot",
-        ratioText: "1:16.6",
+        ratioText: "1:16.7",
+        equipment: "Hario V60",
+        variantLabel: "15g 비례 축소",
+        isVariant: true,
+        sourceLabel: "Hario USA — James Hoffmann Ultimate V60",
+        sourceUrl: "https://www.hario-usa.com/blogs/recipes-and-more-from-friends/james-hoffmann-uitimate-v60-technique",
+        recommendedDoseMin: 15,
+        recommendedDoseMax: 30,
         isCustom: false,
         stages: [
-          { step: 1, name: "뜸들이기 (Bloom)", water: 50, temp: 95, time: 45, switch: "open" },
-          { step: 2, name: "1차 메인 주입 (60%)", water: 100, temp: 95, time: 30, switch: "open" },
-          { step: 3, name: "2차 잔여 주입 (40%)", water: 100, temp: 95, time: 30, switch: "open" },
-          { step: 4, name: "스워링 및 드로우다운", water: 0, temp: 95, time: 75, switch: "open" }
+          { step: 1, name: "뜸들이기 (Bloom)", action: "pour", water: 30, temp: 97, startSec: 0, pourEndSec: 10, stepEndSec: 45, guideMode: "immediate", switch: "open" },
+          { step: 2, name: "1차 메인 주입 (누적 60%)", action: "pour", water: 120, temp: 97, startSec: 45, pourEndSec: 75, stepEndSec: 75, guideMode: "linear", switch: "open" },
+          { step: 3, name: "2차 메인 주입 (누적 100%)", action: "pour", water: 100, temp: 97, startSec: 75, pourEndSec: 105, stepEndSec: 105, guideMode: "linear", switch: "open" },
+          { step: 4, name: "교반·스월 및 드로우다운", action: "swirl", water: 0, temp: 97, startSec: 105, pourEndSec: 105, stepEndSec: 210, guideMode: "event", switch: "open" }
         ]
       },
       {
         id: "ice_drip_classic",
-        name: "아이스 급랭 드립 (3:7 얼음)",
-        baseBeanWeight: 18,
-        grindBase: "코만단테 22클릭 (중간)",
+        name: "아이스 드립 기본형 (앱 변형 1:10)",
+        baseBeanWeight: 20,
+        grindBase: "중미세 (추출수 감소에 맞춰 조절)",
         type: "ice",
-        ratioText: "1:15",
+        ratioText: "1:10",
+        finalRatioText: "1:15",
+        hotWaterTotal: 200,
+        iceWeight: 100,
+        finalWaterTotal: 300,
+        equipment: "Hario V60",
+        variantLabel: "앱 기본 아이스 변형",
+        isVariant: true,
+        sourceLabel: "PourOver Pro 기본 변환 규칙",
+        sourceUrl: null,
+        recommendedDoseMin: 15,
+        recommendedDoseMax: 30,
         isCustom: false,
         stages: [
-          { step: 1, name: "1차 뜸들이기", water: 40, temp: 94, time: 45, switch: "open" },
-          { step: 2, name: "2차 주입", water: 60, temp: 94, time: 45, switch: "open" },
-          { step: 3, name: "3차 주입 및 얼음 추출", water: 62, temp: 92, time: 50, switch: "open" }
+          { step: 1, name: "1차 뜸들이기", action: "pour", water: 40, temp: 92, startSec: 0, pourEndSec: 10, stepEndSec: 45, guideMode: "immediate", switch: "open" },
+          { step: 2, name: "2차 주입", action: "pour", water: 80, temp: 92, startSec: 45, pourEndSec: 75, stepEndSec: 90, guideMode: "linear", switch: "open" },
+          { step: 3, name: "3차 주입 및 급랭", action: "pour", water: 80, temp: 92, startSec: 90, pourEndSec: 120, stepEndSec: 150, guideMode: "linear", switch: "open" }
         ]
       }
     ];
 
     const STORAGE_KEY = "POUROVER_PRO_CUSTOM_RECIPES";
+    const ICE_FALLBACK_POLICY = Object.freeze({
+      hotWaterRatio: 10,
+      iceRatio: 5,
+      finalRatio: 15
+    });
 
     // --- STATE MANAGEMENT ---
     let allRecipes = [];
@@ -537,6 +591,7 @@
     let scaledStages = [];
     let scaledIceWeight = 0;
     let scaledTotalWater = 0;
+    let scaledFinalWater = 0;
 
     // Web Audio Synthesizer
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -565,8 +620,45 @@
     document.addEventListener("DOMContentLoaded", () => {
       loadRecipesFromStorage();
       bindEvents();
+      updateHotIceButtons();
       calculateAndRender();
     });
+
+    function normalizeRecipeTimeline(recipe) {
+      let cursorSec = 0;
+      const validGuideModes = new Set(["linear", "immediate", "event"]);
+      const stages = (Array.isArray(recipe.stages) ? recipe.stages : []).map((stage, index) => {
+        const { time, ...stageWithoutLegacyTime } = stage;
+        const legacyDuration = Number.isFinite(Number(time)) && Number(time) > 0 ? Number(time) : 45;
+        const startSec = Number.isFinite(Number(stage.startSec))
+          ? Math.max(0, Number(stage.startSec))
+          : cursorSec;
+        const stepEndSec = Number.isFinite(Number(stage.stepEndSec)) && Number(stage.stepEndSec) > startSec
+          ? Number(stage.stepEndSec)
+          : startSec + legacyDuration;
+        const hasWater = Number(stage.water) > 0;
+        const defaultPourEndSec = hasWater ? Math.min(stepEndSec, startSec + 10) : startSec;
+        const pourEndSec = Number.isFinite(Number(stage.pourEndSec))
+          ? Math.min(stepEndSec, Math.max(startSec, Number(stage.pourEndSec)))
+          : defaultPourEndSec;
+        const guideMode = validGuideModes.has(stage.guideMode)
+          ? stage.guideMode
+          : (hasWater ? "immediate" : "event");
+
+        cursorSec = stepEndSec;
+        return {
+          ...stageWithoutLegacyTime,
+          step: index + 1,
+          action: stage.action || (hasWater ? "pour" : "wait"),
+          startSec,
+          pourEndSec,
+          stepEndSec,
+          guideMode
+        };
+      });
+
+      return { ...recipe, stages };
+    }
 
     function loadRecipesFromStorage() {
       let customRecipes = [];
@@ -579,7 +671,7 @@
         console.error("Failed to parse custom recipes:", e);
       }
 
-      allRecipes = [...DEFAULT_RECIPES, ...customRecipes];
+      allRecipes = [...DEFAULT_RECIPES, ...customRecipes].map(normalizeRecipeTimeline);
       currentRecipe = allRecipes[0];
       currentBeanWeight = currentRecipe.baseBeanWeight;
       isIceMode = currentRecipe.type === "ice";
@@ -616,32 +708,126 @@
       }
     }
 
+    function getCurrentModeMetadata() {
+      const isDerivedIce = isIceMode && currentRecipe.type !== "ice";
+
+      if (isDerivedIce) {
+        return {
+          badge: "앱 기본 아이스 변형",
+          description: `공식 아이스 버전 없음 · 추출수 1:${ICE_FALLBACK_POLICY.hotWaterRatio} + 얼음 1:${ICE_FALLBACK_POLICY.iceRatio}`,
+          isAppVariant: true
+        };
+      }
+
+      return {
+        badge: currentRecipe.variantLabel || (currentRecipe.isCustom ? "나만의 레시피" : "원본"),
+        description: isIceMode
+          ? `ICE 레시피 · 추출수 1:${ICE_FALLBACK_POLICY.hotWaterRatio} + 얼음 1:${ICE_FALLBACK_POLICY.iceRatio}`
+          : (currentRecipe.isCustom ? "나만의 HOT 레시피" : "원본 HOT 레시피"),
+        isAppVariant: currentRecipe.isVariant === true || currentRecipe.isCustom
+      };
+    }
+
+    function updateRecipeMetadata() {
+      const metadata = getCurrentModeMetadata();
+      const variantBadge = document.getElementById("recipe-variant-badge");
+      const sourceLink = document.getElementById("recipe-source-link");
+
+      variantBadge.textContent = metadata.badge;
+      variantBadge.className = metadata.isAppVariant
+        ? "rounded-full border border-tertiary/30 bg-tertiary/10 px-2 py-0.5 text-tertiary"
+        : "rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary";
+      document.getElementById("recipe-equipment").textContent = currentRecipe.equipment || "장비 미지정";
+      document.getElementById("brew-mode-description").textContent = metadata.description;
+
+      if (currentRecipe.sourceUrl) {
+        sourceLink.href = currentRecipe.sourceUrl;
+        sourceLink.textContent = metadata.isAppVariant
+          ? "기준 레시피 출처"
+          : (currentRecipe.sourceLabel || "출처 보기");
+        sourceLink.classList.remove("hidden");
+      } else {
+        sourceLink.removeAttribute("href");
+        sourceLink.classList.add("hidden");
+      }
+    }
+
+    function formatBrewTime(totalSeconds) {
+      const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+      const mins = Math.floor(safeSeconds / 60);
+      const secs = safeSeconds % 60;
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    }
+
+    function getGuidedTarget(stage, elapsedSeconds) {
+      const previousTarget = stage.previousCumulativeTarget ?? (stage.cumulativeTarget - stage.scaledWater);
+      if (stage.scaledWater <= 0) return previousTarget;
+      if (stage.guideMode !== "linear" || stage.pourEndSec <= stage.startSec) {
+        return stage.cumulativeTarget;
+      }
+      if (elapsedSeconds <= stage.startSec) return previousTarget;
+      if (elapsedSeconds >= stage.pourEndSec) return stage.cumulativeTarget;
+
+      const progress = (elapsedSeconds - stage.startSec) / (stage.pourEndSec - stage.startSec);
+      return Math.round(previousTarget + stage.scaledWater * progress);
+    }
+
     // --- CORE SCALER CALCULATION LOGIC ---
     function calculateAndRender() {
       if (!currentRecipe) return;
 
       const ratio = currentBeanWeight / currentRecipe.baseBeanWeight;
-      
+      const baseStageWater = currentRecipe.stages.reduce((acc, s) => acc + s.water, 0);
+      const targetBaseHotWater = isIceMode
+        ? (currentRecipe.hotWaterTotal || currentRecipe.baseBeanWeight * ICE_FALLBACK_POLICY.hotWaterRatio)
+        : (currentRecipe.type === "ice"
+          ? (currentRecipe.finalWaterTotal || currentRecipe.baseBeanWeight * 15)
+          : baseStageWater);
+      const targetHotWater = Math.round(targetBaseHotWater * ratio);
+      const stageModeScale = baseStageWater > 0 ? targetBaseHotWater / baseStageWater : 1;
+
       let cumuScaleTarget = 0;
       scaledStages = currentRecipe.stages.map(st => {
-        const scaledWater = Math.round(st.water * ratio);
+        const scaledWater = Math.round(st.water * ratio * stageModeScale);
+        const previousCumulativeTarget = cumuScaleTarget;
         cumuScaleTarget += scaledWater;
         return {
           ...st,
           scaledWater: scaledWater,
+          previousCumulativeTarget,
           cumulativeTarget: cumuScaleTarget
         };
       });
 
-      const rawTotalWater = Math.round(currentRecipe.stages.reduce((acc, s) => acc + s.water, 0) * ratio);
-      
+      const roundingDiff = targetHotWater - cumuScaleTarget;
+      if (roundingDiff !== 0) {
+        let lastPourIndex = -1;
+        for (let i = currentRecipe.stages.length - 1; i >= 0; i--) {
+          if (currentRecipe.stages[i].water > 0) {
+            lastPourIndex = i;
+            break;
+          }
+        }
+        if (lastPourIndex >= 0) {
+          scaledStages[lastPourIndex].scaledWater += roundingDiff;
+          cumuScaleTarget = 0;
+          scaledStages = scaledStages.map(st => ({
+            ...st,
+            previousCumulativeTarget: cumuScaleTarget,
+            cumulativeTarget: (cumuScaleTarget += st.scaledWater)
+          }));
+        }
+      }
+
       if (isIceMode) {
-        scaledIceWeight = Math.round(rawTotalWater * 0.35);
-        scaledTotalWater = rawTotalWater - scaledIceWeight;
+        const baseIceWeight = currentRecipe.iceWeight || currentRecipe.baseBeanWeight * ICE_FALLBACK_POLICY.iceRatio;
+        scaledIceWeight = Math.round(baseIceWeight * ratio);
+        scaledTotalWater = targetHotWater;
       } else {
         scaledIceWeight = 0;
-        scaledTotalWater = rawTotalWater;
+        scaledTotalWater = targetHotWater;
       }
+      scaledFinalWater = scaledTotalWater + scaledIceWeight;
 
       const beanRatioDiff = (currentBeanWeight - currentRecipe.baseBeanWeight) / currentRecipe.baseBeanWeight;
       const warningBanner = document.getElementById("warning-banner");
@@ -658,16 +844,26 @@
       }
 
       document.getElementById("input-bean-weight").value = currentBeanWeight.toFixed(1);
-      document.getElementById("ratio-badge").textContent = `${currentRecipe.ratioText || '1:15'} Ratio`;
-      document.getElementById("total-water-display").textContent = `${scaledTotalWater + scaledIceWeight}g`;
+      const actualRatio = scaledTotalWater / currentBeanWeight;
+      const formattedRatio = Number.isInteger(actualRatio) ? actualRatio.toString() : actualRatio.toFixed(1);
+      document.getElementById("ratio-badge").textContent = `1:${formattedRatio} 추출 비율`;
+      document.getElementById("total-water-display").textContent = `${scaledTotalWater}g`;
       document.getElementById("ice-weight-display").textContent = `${scaledIceWeight}g`;
       document.getElementById("ice-badge").textContent = isIceMode ? "ICE" : "HOT";
+      document.getElementById("final-yield-display").textContent = `${scaledFinalWater}g`;
+      const finalYieldCard = document.getElementById("final-yield-card");
+      if (isIceMode) {
+        finalYieldCard.classList.remove("hidden");
+        finalYieldCard.classList.add("flex");
+      } else {
+        finalYieldCard.classList.add("hidden");
+        finalYieldCard.classList.remove("flex");
+      }
       document.getElementById("grind-display").textContent = currentRecipe.grindBase || "코만단테 24클릭";
+      updateRecipeMetadata();
 
-      const totalTimeSec = scaledStages.reduce((acc, s) => acc + s.time, 0);
-      const mins = Math.floor(totalTimeSec / 60);
-      const secs = totalTimeSec % 60;
-      document.getElementById("total-time-display").textContent = `Total Time: ${mins}:${secs.toString().padStart(2, '0')}`;
+      const totalTimeSec = scaledStages.reduce((max, stage) => Math.max(max, stage.stepEndSec), 0);
+      document.getElementById("total-time-display").textContent = `총 추출 시간 ${formatBrewTime(totalTimeSec)}`;
 
       const container = document.getElementById("step-list-container");
       container.innerHTML = scaledStages.map((st, idx) => `
@@ -676,7 +872,7 @@
             <span class="font-mono text-xs text-primary font-bold">STEP ${st.step.toString().padStart(2, '0')} (${st.name})</span>
             <span class="font-mono text-[11px] text-on-surface-variant">저울 목표: ${st.cumulativeTarget}g</span>
           </div>
-          <div class="grid grid-cols-4 gap-2">
+          <div class="grid ${currentRecipe.equipment === 'Hario Switch' ? 'grid-cols-4' : 'grid-cols-3'} gap-2">
             <div class="flex flex-col">
               <span class="font-mono text-[10px] text-on-surface-variant">WATER</span>
               <span class="font-display font-semibold text-base text-on-surface">+${st.scaledWater}g</span>
@@ -686,13 +882,16 @@
               <span class="font-display font-semibold text-base text-on-surface">${st.temp}°C</span>
             </div>
             <div class="flex flex-col">
-              <span class="font-mono text-[10px] text-on-surface-variant">TIME</span>
-              <span class="font-display font-semibold text-base text-on-surface">${st.time}s</span>
+              <span class="font-mono text-[10px] text-on-surface-variant">구간</span>
+              <span class="font-display font-semibold text-sm text-on-surface">${formatBrewTime(st.startSec)}–${formatBrewTime(st.stepEndSec)}</span>
+              ${st.scaledWater > 0 ? `<span class="font-mono text-[9px] text-on-surface-variant">주입 ${formatBrewTime(st.pourEndSec)}까지</span>` : ''}
             </div>
-            <div class="flex flex-col items-end">
-              <span class="font-mono text-[10px] text-on-surface-variant">SWITCH</span>
-              <span class="font-mono text-xs font-bold ${st.switch === 'open' ? 'text-tertiary' : 'text-error'}">${st.switch.toUpperCase()}</span>
-            </div>
+            ${currentRecipe.equipment === 'Hario Switch' ? `
+              <div class="flex flex-col items-end">
+                <span class="font-mono text-[10px] text-on-surface-variant">SWITCH</span>
+                <span class="font-mono text-xs font-bold ${st.switch === 'open' ? 'text-tertiary' : 'text-error'}">${st.switch.toUpperCase()}</span>
+              </div>
+            ` : ''}
           </div>
         </div>
       `).join("");
@@ -745,6 +944,7 @@
 
       // Hot / Ice Toggle
       document.getElementById("btn-type-hot").addEventListener("click", () => {
+        if (currentRecipe.type === "ice" && !currentRecipe.hotVariantId) return;
         isIceMode = false;
         updateHotIceButtons();
         calculateAndRender();
@@ -939,7 +1139,7 @@
         return;
       }
 
-      const newRecipe = {
+      const newRecipe = normalizeRecipeTimeline({
         id: "custom_" + Date.now(),
         name: name,
         baseBeanWeight: baseBeanWeight,
@@ -948,7 +1148,7 @@
         ratioText: ratioText,
         isCustom: true,
         stages: stages
-      };
+      });
 
       const existingCustom = allRecipes.filter(r => r.isCustom);
       const updatedCustom = [...existingCustom, newRecipe];
@@ -968,9 +1168,18 @@
     function updateHotIceButtons() {
       const btnHot = document.getElementById("btn-type-hot");
       const btnIce = document.getElementById("btn-type-ice");
+      const hotUnavailable = currentRecipe?.type === "ice" && !currentRecipe.hotVariantId;
+
+      btnHot.disabled = hotUnavailable;
+      btnHot.setAttribute("aria-disabled", hotUnavailable.toString());
+      btnHot.setAttribute("aria-pressed", (!isIceMode).toString());
+      btnIce.setAttribute("aria-pressed", isIceMode.toString());
+
       if (isIceMode) {
-        btnIce.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-tertiary text-on-tertiary shadow-sm";
-        btnHot.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
+        btnIce.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-tertiary text-surface shadow-sm";
+        btnHot.className = hotUnavailable
+          ? "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 text-on-surface-variant opacity-40 cursor-not-allowed"
+          : "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
       } else {
         btnHot.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-primary-container text-on-primary shadow-sm";
         btnIce.className = "flex-1 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
@@ -978,6 +1187,19 @@
     }
 
     // --- TIMER ENGINE & LIVE VIEW ---
+    function getTotalBrewTime() {
+      return scaledStages.reduce((max, stage) => Math.max(max, stage.stepEndSec), 0);
+    }
+
+    function syncTimerStepToElapsed() {
+      const nextStepIndex = scaledStages.findIndex(stage => totalSecondsElapsed < stage.stepEndSec);
+      if (nextStepIndex < 0) return false;
+
+      currentStepIndex = nextStepIndex;
+      stepTimeRemaining = Math.max(0, scaledStages[currentStepIndex].stepEndSec - totalSecondsElapsed);
+      return true;
+    }
+
     function startTimerView() {
       requestWakeLock();
 
@@ -990,7 +1212,7 @@
 
       totalSecondsElapsed = 0;
       currentStepIndex = 0;
-      stepTimeRemaining = scaledStages[0].time;
+      stepTimeRemaining = scaledStages[0].stepEndSec;
 
       renderTimerStep();
       startTimerInterval();
@@ -1012,27 +1234,25 @@
     function startTimerInterval() {
       timerRunning = true;
       updatePlayPauseButtonUI();
+      document.getElementById("timer-status-badge").textContent = "LIVE BREW";
+      document.getElementById("timer-status-badge").className = "font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow";
       playBeep(880, 0.2);
 
       timerInterval = setInterval(() => {
         totalSecondsElapsed++;
-        stepTimeRemaining--;
+        const previousStepIndex = currentStepIndex;
 
-        if (stepTimeRemaining <= 3 && stepTimeRemaining > 0) {
-          playBeep(600, 0.1);
-          if (navigator.vibrate) navigator.vibrate(100);
+        if (!syncTimerStepToElapsed()) {
+          finishBrewing();
+          return;
         }
 
-        if (stepTimeRemaining <= 0) {
-          currentStepIndex++;
-          if (currentStepIndex < scaledStages.length) {
-            stepTimeRemaining = scaledStages[currentStepIndex].time;
-            playBeep(1200, 0.3);
-            if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
-          } else {
-            finishBrewing();
-            return;
-          }
+        if (currentStepIndex !== previousStepIndex) {
+          playBeep(1200, 0.3);
+          if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
+        } else if (stepTimeRemaining <= 3 && stepTimeRemaining > 0) {
+          playBeep(600, 0.1);
+          if (navigator.vibrate) navigator.vibrate(100);
         }
 
         renderTimerStep();
@@ -1072,7 +1292,8 @@
     function skipToNextStep() {
       if (currentStepIndex < scaledStages.length - 1) {
         currentStepIndex++;
-        stepTimeRemaining = scaledStages[currentStepIndex].time;
+        totalSecondsElapsed = scaledStages[currentStepIndex].startSec;
+        stepTimeRemaining = scaledStages[currentStepIndex].stepEndSec - totalSecondsElapsed;
         playBeep(1000, 0.15);
         renderTimerStep();
       } else {
@@ -1097,31 +1318,55 @@
       const st = scaledStages[currentStepIndex];
       const totalSteps = scaledStages.length;
 
-      const mins = Math.floor(totalSecondsElapsed / 60);
-      const secs = totalSecondsElapsed % 60;
-      document.getElementById("timer-display").textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      document.getElementById("timer-display").textContent = formatBrewTime(totalSecondsElapsed).padStart(5, "0");
 
-      const progressPct = Math.min(100, Math.round(((currentStepIndex + 1) / totalSteps) * 100));
+      const totalBrewTime = getTotalBrewTime();
+      const progressPct = totalBrewTime > 0
+        ? Math.min(100, Math.round((totalSecondsElapsed / totalBrewTime) * 100))
+        : 0;
       document.getElementById("timer-progress-bar").style.width = `${progressPct}%`;
       document.getElementById("timer-step-counter").textContent = `Step ${currentStepIndex + 1} of ${totalSteps}`;
 
-      document.getElementById("timer-target-scale").textContent = st.cumulativeTarget;
-      document.getElementById("timer-step-water").textContent = `+${st.scaledWater}g`;
+      const guidedTarget = getGuidedTarget(st, totalSecondsElapsed);
+      document.getElementById("timer-target-scale").textContent = guidedTarget;
+      document.getElementById("timer-step-water").textContent = st.scaledWater > 0
+        ? `+${st.scaledWater}g`
+        : "물 주입 없음";
 
       document.getElementById("timer-step-title").textContent = `STEP ${st.step.toString().padStart(2, '0')} (${st.name})`;
-      document.getElementById("timer-instruction").innerHTML = `Pour <span class="text-brew-green font-black">+${st.scaledWater}g</span> Water now`;
+      const isPouring = st.scaledWater > 0 && totalSecondsElapsed < st.pourEndSec;
+      if (isPouring && st.guideMode === "linear") {
+        document.getElementById("timer-instruction").innerHTML =
+          `<span class="text-brew-green font-black">${formatBrewTime(st.pourEndSec)}까지 ${st.cumulativeTarget}g</span>에 맞춰 주입하세요`;
+      } else if (isPouring) {
+        document.getElementById("timer-instruction").innerHTML =
+          `<span class="text-brew-green font-black">${st.cumulativeTarget}g</span>까지 바로 주입하세요`;
+      } else if (st.scaledWater > 0) {
+        document.getElementById("timer-instruction").innerHTML =
+          `주입 완료 · <span class="text-brew-green font-black">${formatBrewTime(st.stepEndSec)}</span>까지 ${st.name}`;
+      } else {
+        document.getElementById("timer-instruction").textContent = st.name;
+      }
       document.getElementById("timer-step-temp").textContent = `${st.temp}°C`;
-      document.getElementById("timer-step-switch").textContent = `Switch ${st.switch.toUpperCase()}`;
+      const switchContainer = document.getElementById("timer-step-switch-container");
+      if (currentRecipe.equipment === "Hario Switch") {
+        switchContainer.classList.remove("hidden");
+        document.getElementById("timer-step-switch").textContent = `Switch ${st.switch.toUpperCase()}`;
+      } else {
+        switchContainer.classList.add("hidden");
+      }
 
       if (currentStepIndex < totalSteps - 1) {
         const nextSt = scaledStages[currentStepIndex + 1];
-        document.getElementById("timer-next-label").textContent = `Next: Step ${nextSt.step}`;
-        document.getElementById("timer-next-desc").textContent = `Pour ${nextSt.scaledWater}g Water (${nextSt.name})`;
-        document.getElementById("timer-next-time").textContent = `in ${stepTimeRemaining}s`;
+        document.getElementById("timer-next-label").textContent = `다음: STEP ${nextSt.step}`;
+        document.getElementById("timer-next-desc").textContent = nextSt.scaledWater > 0
+          ? `${nextSt.name} · +${nextSt.scaledWater}g`
+          : nextSt.name;
+        document.getElementById("timer-next-time").textContent = `${formatBrewTime(nextSt.startSec)} 시작`;
       } else {
-        document.getElementById("timer-next-label").textContent = "Next: Final Drop";
+        document.getElementById("timer-next-label").textContent = "다음: 추출 완료";
         document.getElementById("timer-next-desc").textContent = "추출 완료 및 서버 정리";
-        document.getElementById("timer-next-time").textContent = `in ${stepTimeRemaining}s`;
+        document.getElementById("timer-next-time").textContent = `${formatBrewTime(st.stepEndSec)} 완료`;
       }
     }
 

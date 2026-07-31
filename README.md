@@ -65,6 +65,7 @@ c:\Users\sec\Desktop\레시피\index.html
 ## 📄 사양서 및 핸드오프 파일
 
 * [drip_coffee_app_handoff.md](drip_coffee_app_handoff.md) : DB 구조, UX 요구사항 및 스티치(Stitch) 프롬프트 팩이 정리된 문서입니다.
+* [IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md) : 레시피 정확도, 계산 구조, 타이머 안정성 및 UI 개선 작업의 우선순위와 완료 조건을 정리한 실행 로드맵입니다.
 
 ---
 

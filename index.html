@@ -164,85 +164,72 @@
     </div>
 
     <!-- VIEW 2: LIVE TIMER VIEW -->
-    <div id="view-timer" class="hidden flex-grow pt-20 pb-32 px-5 flex flex-col justify-between transition-opacity duration-300">
+    <div id="view-timer" class="hidden flex-grow pt-5 pb-32 px-5 flex flex-col transition-opacity duration-300">
       
       <!-- Top Progress Indicator -->
-      <section class="mt-2 mb-3">
-        <div class="flex justify-between items-end mb-2">
-          <p class="font-mono text-xs text-on-surface-variant tracking-widest">추출 진행률</p>
-          <p id="timer-step-counter" class="font-mono text-xs text-primary font-bold">1/5단계</p>
+      <section class="mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <div class="flex items-center gap-2">
+            <span id="timer-status-badge" role="status" aria-live="polite" class="font-mono text-xs text-brew-green font-bold tracking-widest">준비</span>
+            <span class="w-1 h-1 rounded-full bg-white/20" aria-hidden="true"></span>
+            <p id="timer-step-counter" class="font-mono text-xs text-on-surface-variant font-bold">1/5단계</p>
+          </div>
+          <p id="timer-step-title" class="max-w-[52%] truncate text-right font-mono text-[11px] text-on-surface-variant">1단계 · 뜸들이기</p>
         </div>
-        <div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+        <div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
           <div id="timer-progress-bar" role="progressbar" aria-label="추출 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" class="h-full bg-primary-container progress-glow transition-all duration-300 ease-out" style="width: 0%"></div>
         </div>
+        <p id="timer-capability-status" class="hidden mt-2 font-mono text-[10px] text-on-surface-variant text-center"></p>
       </section>
 
-      <!-- Hero Timer & Scale Target Section -->
-      <section class="flex-grow flex flex-col items-center justify-center text-center my-4">
-        <div class="mb-2">
-          <span id="timer-status-badge" role="status" aria-live="polite" class="font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow">준비</span>
-          <p id="timer-capability-status" class="mt-1 font-mono text-[10px] text-on-surface-variant"></p>
-        </div>
-        
-        <!-- Huge Timer Display -->
-        <div class="mb-4">
-          <h2 id="timer-display" aria-live="off" class="text-[76px] leading-none font-display font-black text-brew-green tracking-tighter tabular-nums drop-shadow-[0_0_20px_rgba(0,230,118,0.3)]">
+      <!-- Ultra Focus Hero -->
+      <section class="flex-grow flex flex-col items-center justify-center text-center min-h-0">
+        <div class="mb-5">
+          <p class="font-mono text-[10px] text-on-surface-variant tracking-[0.22em] mb-2">경과 시간</p>
+          <h2 id="timer-display" aria-live="off" class="text-[56px] leading-none font-display font-black text-on-surface tracking-tighter tabular-nums">
             00:00
           </h2>
         </div>
 
         <!-- Scale Target Display -->
-        <div class="glass-card px-6 py-4 rounded-2xl border-brew-amber/30 w-full max-w-xs shadow-xl">
-          <p class="font-mono text-[11px] text-on-surface-variant uppercase tracking-wider mb-1">현재 권장 저울 목표</p>
+        <div id="timer-target-card" class="timer-temperature-card px-6 py-5 rounded-3xl w-full shadow-xl">
+          <p class="font-mono text-[11px] text-on-surface-variant tracking-wider mb-1">현재 권장 저울 목표</p>
           <div class="flex items-baseline justify-center gap-1.5">
-            <span id="timer-target-scale" class="text-4xl font-display font-black text-brew-amber tabular-nums">45</span>
-            <span class="text-lg font-mono text-brew-amber/70 font-bold">g</span>
+            <span id="timer-target-scale" class="text-[72px] leading-none font-display font-black text-brew-amber tabular-nums">45</span>
+            <span class="text-2xl font-mono text-brew-amber/70 font-bold">g</span>
           </div>
-          <p id="timer-step-pour-desc" class="text-xs text-on-surface-variant mt-1.5 border-t border-white/5 pt-1">
-            이번 단계: <span id="timer-step-water" class="text-primary font-bold">+45g</span> 주입
-          </p>
-        </div>
-      </section>
-
-      <!-- Contextual Active Step Card -->
-      <section class="mb-4">
-        <div id="timer-active-card" class="glass-card active-step-border p-5 rounded-2xl relative overflow-hidden">
-          <div class="absolute -right-4 -top-4 w-24 h-24 bg-brew-green/10 blur-3xl rounded-full"></div>
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1.5">
-                <span class="w-2 h-2 rounded-full bg-brew-green animate-pulse"></span>
-                <span id="timer-step-title" class="font-mono text-xs text-brew-green font-bold">1단계 (뜸들이기)</span>
-              </div>
-              
-              <h3 id="timer-instruction" class="font-display text-xl font-bold text-on-surface leading-tight mb-3">
-                <span id="timer-pour-amount" class="text-brew-green font-black">45g</span> 물을 주입하세요
-              </h3>
-              
-              <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1.5 text-on-surface-variant">
-                  <span class="material-symbols-outlined text-base">thermostat</span>
-                  <span id="timer-step-temp" class="font-mono text-xs">92°C</span>
-                </div>
-                <div id="timer-step-switch-container" class="flex items-center gap-1.5 text-brew-green">
-                  <span class="material-symbols-outlined text-base">valve</span>
-                  <span id="timer-step-switch" class="font-mono text-xs font-bold">스위치 열림</span>
-                </div>
-              </div>
+          <div class="mt-3 flex items-center justify-center gap-2">
+            <div id="timer-temperature-badge" class="timer-temperature-badge inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5">
+              <span class="material-symbols-outlined text-base" aria-hidden="true">thermostat</span>
+              <span class="font-mono text-[11px]">권장 물 온도</span>
+              <span id="timer-step-temp" class="font-mono text-xs font-bold">92°C</span>
+            </div>
+            <div id="timer-step-switch-container" class="hidden shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5">
+              <span id="timer-step-switch-icon" class="material-symbols-outlined text-base" aria-hidden="true">arrow_downward</span>
+              <span id="timer-step-switch" class="font-mono text-[11px] font-bold">열림 · 배출</span>
             </div>
           </div>
+        </div>
+
+        <div class="w-full py-6">
+          <h3 id="timer-instruction" aria-live="polite" class="font-display text-2xl font-bold text-on-surface leading-snug">
+            <span class="text-brew-green font-black">45g</span> 물을 주입하세요
+          </h3>
+          <p id="timer-step-pour-desc" class="text-xs text-on-surface-variant mt-2">
+            이번 단계 <span id="timer-step-water" class="text-primary font-bold">+45g</span>
+          </p>
         </div>
       </section>
 
       <!-- Next Step Preview Card -->
       <section class="mb-2">
-        <div class="glass-card p-4 rounded-xl opacity-70 border border-white/5">
+        <div class="border-t border-white/10 pt-3 px-1">
           <div class="flex justify-between items-center">
-            <div class="flex flex-col">
-              <span id="timer-next-label" class="font-mono text-[10px] text-on-surface-variant mb-0.5">다음: 2단계</span>
-              <p id="timer-next-desc" class="font-body text-sm font-medium text-on-surface">물 45g 주입</p>
+            <div class="flex flex-col min-w-0 pr-3">
+              <span id="timer-next-label" class="font-mono text-[10px] text-on-surface-variant mb-1">다음: 2단계</span>
+              <p id="timer-next-desc" class="font-body text-sm font-medium text-on-surface truncate">물 45g 주입</p>
             </div>
-            <span id="timer-next-time" class="font-mono text-xs text-on-surface-variant">0:45 시작</span>
+            <span id="timer-next-time" class="shrink-0 font-mono text-xs text-primary">0:45 시작</span>
           </div>
         </div>
       </section>

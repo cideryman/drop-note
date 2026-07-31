@@ -32,6 +32,19 @@ assert.match(html, /id="modal-add-recipe"[^>]*role="dialog"[^>]*aria-modal="true
 assert.match(html, /id="modal-backup"[^>]*role="dialog"[^>]*aria-modal="true"/);
 assert.match(html, /id="timer-progress-bar"[^>]*role="progressbar"[^>]*aria-valuenow="0"/);
 assert.match(html, /id="timer-progress-bar"[^>]*style="width: 0%"/);
+assert.match(html, /id="timer-target-card"[^>]*timer-temperature-card/);
+assert.match(html, /권장 물 온도/);
+assert.doesNotMatch(
+  html.match(/<!-- VIEW 2: LIVE TIMER VIEW -->([\s\S]*?)<!-- MODAL 1:/)?.[1] ?? "",
+  /animate-pulse/,
+  "초집중 타이머 화면은 반복 점멸을 사용하지 않아야 합니다."
+);
+assert.match(appScript, /document\.body\.classList\.add\("timer-focus-active"\)/);
+assert.match(appScript, /function getTemperatureAccent\(temp\)/);
+assert.match(appScript, /function getSwitchPresentation\(switchState\)/);
+assert.match(appScript, /닫힘 · 침출/);
+assert.match(appScript, /열림 · 배출/);
+assert.match(appScript, /function splitStageLabel\(name\)/);
 
 for (const buttonId of [
   "btn-sound-toggle",

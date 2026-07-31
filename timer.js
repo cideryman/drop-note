@@ -71,6 +71,7 @@ function syncTimerStepToElapsed() {
 function startTimerView() {
   if (scaledStages.length === 0) return;
 
+  document.body.classList.add("timer-focus-active");
   document.getElementById("view-calculator").classList.add("hidden");
   document.getElementById("calculator-action-bar").classList.add("hidden");
 
@@ -108,6 +109,7 @@ function stopTimerView() {
   timerRunStartedAtMs = null;
   timerElapsedBeforeRunMs = 0;
   timerLastCountdownSecond = null;
+  document.body.classList.remove("timer-focus-active");
 
   document.getElementById("view-timer").classList.add("hidden");
   document.getElementById("timer-control-bar").classList.add("hidden");
@@ -130,7 +132,7 @@ function startTimerInterval(nowMs = getCurrentTimeMs()) {
   timerLastCountdownSecond = null;
   updatePlayPauseButtonUI();
   document.getElementById("timer-status-badge").textContent = "추출 중";
-  document.getElementById("timer-status-badge").className = "font-mono text-xs text-brew-green font-bold tracking-widest animate-pulse-slow";
+  document.getElementById("timer-status-badge").className = "font-mono text-xs text-brew-green font-bold tracking-widest";
   scheduleTimerTicks();
   requestWakeLock();
   if (timerElapsedBeforeRunMs === 0) playBeep(880, 0.2);
@@ -304,11 +306,9 @@ function renderTimerStep() {
 
   const guidedTarget = getGuidedTarget(st, totalSecondsElapsed);
   document.getElementById("timer-target-scale").textContent = guidedTarget;
-  document.getElementById("timer-step-water").textContent = st.scaledWater > 0
-    ? `+${st.scaledWater}g`
-    : "물 주입 없음";
 
-  document.getElementById("timer-step-title").textContent = `${st.step}단계 (${st.name})`;
+  const stageLabel = splitStageLabel(st.name);
+  document.getElementById("timer-step-title").textContent = `${st.step}단계 · ${stageLabel.title}`;
   const isPouring = st.scaledWater > 0 && totalSecondsElapsed < st.pourEndSec;
   if (isPouring && st.guideMode === "linear") {
     setTimerInstruction([
@@ -324,32 +324,90 @@ function renderTimerStep() {
     setTimerInstruction([
       { text: "주입 완료 · " },
       { text: formatBrewTime(st.stepEndSec), emphasized: true },
-      { text: `까지 ${st.name}` }
+      { text: `까지 ${stageLabel.title}` }
     ]);
   } else {
-    document.getElementById("timer-instruction").textContent = st.name;
+    document.getElementById("timer-instruction").textContent = stageLabel.title;
   }
+  document.getElementById("timer-step-pour-desc").textContent = "";
+  if (stageLabel.detail) {
+    appendTextElement(
+      document.getElementById("timer-step-pour-desc"),
+      "span",
+      "whitespace-nowrap",
+      stageLabel.detail
+    );
+    appendTextElement(
+      document.getElementById("timer-step-pour-desc"),
+      "span",
+      "mx-1.5 text-white/25",
+      "·"
+    );
+  }
+  appendTextElement(
+    document.getElementById("timer-step-pour-desc"),
+    "span",
+    "",
+    "이번 단계 "
+  );
+  appendTextElement(
+    document.getElementById("timer-step-pour-desc"),
+    "span",
+    "text-primary font-bold",
+    st.scaledWater > 0 ? `+${st.scaledWater}g` : "물 주입 없음"
+  );
   document.getElementById("timer-step-temp").textContent = `${st.temp}°C`;
+  applyTimerTemperatureAccent(st.temp);
   const switchContainer = document.getElementById("timer-step-switch-container");
   if (currentRecipe.equipment === "Hario Switch") {
+    const switchPresentation = getSwitchPresentation(st.switch);
     switchContainer.classList.remove("hidden");
-    document.getElementById("timer-step-switch").textContent = `스위치 ${formatSwitchState(st.switch)}`;
+    switchContainer.classList.add("inline-flex");
+    switchContainer.className = `inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 ${switchPresentation.badgeClass}`;
+    document.getElementById("timer-step-switch-icon").textContent = switchPresentation.icon;
+    document.getElementById("timer-step-switch").textContent = switchPresentation.label;
+    switchContainer.setAttribute("aria-label", `스위치 ${switchPresentation.ariaLabel}`);
   } else {
     switchContainer.classList.add("hidden");
+    switchContainer.classList.remove("inline-flex");
+    switchContainer.removeAttribute("aria-label");
   }
 
   if (currentStepIndex < totalSteps - 1) {
     const nextSt = scaledStages[currentStepIndex + 1];
-    document.getElementById("timer-next-label").textContent = `다음: ${nextSt.step}단계`;
+    const nextStageLabel = splitStageLabel(nextSt.name);
+    document.getElementById("timer-next-label").textContent = nextStageLabel.detail
+      ? `다음: ${nextSt.step}단계 · ${nextStageLabel.detail}`
+      : `다음: ${nextSt.step}단계`;
     document.getElementById("timer-next-desc").textContent = nextSt.scaledWater > 0
-      ? `${nextSt.name} · +${nextSt.scaledWater}g`
-      : nextSt.name;
+      ? `${nextStageLabel.title} · +${nextSt.scaledWater}g`
+      : nextStageLabel.title;
     document.getElementById("timer-next-time").textContent = `${formatBrewTime(nextSt.startSec)} 시작`;
   } else {
     document.getElementById("timer-next-label").textContent = "다음: 추출 완료";
     document.getElementById("timer-next-desc").textContent = "추출 완료 및 서버 정리";
     document.getElementById("timer-next-time").textContent = `${formatBrewTime(st.stepEndSec)} 완료`;
   }
+}
+
+function getTemperatureAccent(temp) {
+  if (temp <= 79) {
+    return { color: "#74b9ff", rgb: "116, 185, 255" };
+  }
+  if (temp <= 86) {
+    return { color: "#58d6c7", rgb: "88, 214, 199" };
+  }
+  if (temp <= 92) {
+    return { color: "#e5a93b", rgb: "229, 169, 59" };
+  }
+  return { color: "#ff8a65", rgb: "255, 138, 101" };
+}
+
+function applyTimerTemperatureAccent(temp) {
+  const targetCard = document.getElementById("timer-target-card");
+  const accent = getTemperatureAccent(temp);
+  targetCard.style.setProperty("--temperature-accent", accent.color);
+  targetCard.style.setProperty("--temperature-rgb", accent.rgb);
 }
 
 function setTimerInstruction(parts) {
@@ -370,6 +428,7 @@ function updateTimerCapabilityStatus(message = "") {
   const status = document.getElementById("timer-capability-status");
   if (message) {
     status.textContent = message;
+    status.classList.remove("hidden");
     return;
   }
 
@@ -380,6 +439,7 @@ function updateTimerCapabilityStatus(message = "") {
   status.textContent = unavailable.length > 0
     ? `${unavailable.join("·")} 미지원 · 복귀 시 시간 자동 보정`
     : "화면 꺼짐 방지 사용 · 복귀 시 시간 자동 보정";
+  status.classList.toggle("hidden", unavailable.length === 0);
 }
 
 function handleTimerVisibilityChange() {
@@ -445,4 +505,3 @@ async function releaseWakeLock() {
     console.warn("화면 꺼짐 방지 해제에 실패했습니다:", err);
   }
 }
-

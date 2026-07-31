@@ -9,15 +9,22 @@ const appScript = loadAppScript();
 assert.ok(appScript?.includes("const DEFAULT_RECIPES"), "애플리케이션 스크립트를 찾을 수 있어야 합니다.");
 
 const elements = new Map();
+const createStyle = () => ({
+  setProperty(name, value) {
+    this[name] = value;
+  }
+});
+
 const createElement = () => ({
   value: "",
   textContent: "",
   innerHTML: "",
   className: "",
-  style: {},
+  style: createStyle(),
   classList: {
     add() {},
-    remove() {}
+    remove() {},
+    toggle() {}
   },
   addEventListener() {},
   appendChild(child) {
@@ -138,7 +145,14 @@ function renderTimerAt(recipeId, beanWeight, iceMode, elapsedSeconds) {
       target: document.getElementById("timer-target-scale").textContent,
       instruction: document.getElementById("timer-instruction").innerHTML || document.getElementById("timer-instruction").textContent,
       nextTime: document.getElementById("timer-next-time").textContent,
-      progress: document.getElementById("timer-progress-bar").style.width
+      nextLabel: document.getElementById("timer-next-label").textContent,
+      nextDescription: document.getElementById("timer-next-desc").textContent,
+      stageTitle: document.getElementById("timer-step-title").textContent,
+      progress: document.getElementById("timer-progress-bar").style.width,
+      temperature: document.getElementById("timer-step-temp").textContent,
+      temperatureAccent: document.getElementById("timer-target-card").style["--temperature-accent"],
+      switchLabel: document.getElementById("timer-step-switch").textContent,
+      switchIcon: document.getElementById("timer-step-switch-icon").textContent
     });
   `, context);
   return JSON.parse(JSON.stringify(result));
@@ -217,6 +231,22 @@ assert.equal(hoffmannAtOneMinute.nextTime, "1:15 시작");
 const iceAtFiftySeconds = renderTimerAt("ice_drip_classic", 20, true, 50);
 assert.equal(iceAtFiftySeconds.target, 53);
 assert.match(iceAtFiftySeconds.instruction, /1:15까지 120g/);
+
+const switchAtLowTemperature = renderTimerAt("hario_switch_sweet", 20, false, 80);
+assert.equal(switchAtLowTemperature.temperature, "70°C");
+assert.equal(switchAtLowTemperature.temperatureAccent, "#74b9ff");
+assert.equal(switchAtLowTemperature.switchLabel, "닫힘 · 침출");
+assert.equal(switchAtLowTemperature.switchIcon, "horizontal_rule");
+assert.equal(switchAtLowTemperature.stageTitle, "3단계 · 저온 침출");
+assert.doesNotMatch(switchAtLowTemperature.nextDescription, /[()]/);
+
+const switchAtOpenValve = renderTimerAt("hario_switch_sweet", 20, false, 110);
+assert.equal(switchAtOpenValve.switchLabel, "열림 · 배출");
+assert.equal(switchAtOpenValve.switchIcon, "arrow_downward");
+
+const hoffmannAtHighTemperature = renderTimerAt("james_hoffmann_v60", 15, false, 0);
+assert.equal(hoffmannAtHighTemperature.temperature, "97°C");
+assert.equal(hoffmannAtHighTemperature.temperatureAccent, "#ff8a65");
 
 const legacyRecipe = vm.runInContext(`
   normalizeRecipeTimeline({

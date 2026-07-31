@@ -290,17 +290,29 @@ function calculateAndRender() {
     card.className = `glass-card ${index === 0 ? "active-step-card" : "opacity-70"} rounded-xl p-4 flex flex-col gap-2.5`;
 
     const header = document.createElement("div");
-    header.className = "flex justify-between items-center";
+    header.className = "flex justify-between items-start gap-3";
+    const stageLabel = splitStageLabel(stage.name);
+    const stageHeading = document.createElement("div");
+    stageHeading.className = "min-w-0 flex flex-col";
     appendTextElement(
-      header,
+      stageHeading,
       "span",
       "font-mono text-xs text-primary font-bold",
-      `${stage.step}단계 (${stage.name})`
+      `${stage.step}단계 · ${stageLabel.title}`
     );
+    if (stageLabel.detail) {
+      appendTextElement(
+        stageHeading,
+        "span",
+        "mt-0.5 max-w-full truncate whitespace-nowrap font-mono text-[10px] text-on-surface-variant",
+        stageLabel.detail
+      );
+    }
+    header.appendChild(stageHeading);
     appendTextElement(
       header,
       "span",
-      "font-mono text-[11px] text-on-surface-variant",
+      "shrink-0 font-mono text-[11px] text-on-surface-variant",
       `저울 목표: ${stage.cumulativeTarget}g`
     );
     card.appendChild(header);
@@ -332,13 +344,13 @@ function calculateAndRender() {
     if (currentRecipe.equipment === "Hario Switch") {
       const switchDetail = document.createElement("div");
       switchDetail.className = "flex flex-col items-end";
+      const switchPresentation = getSwitchPresentation(stage.switch);
       appendTextElement(switchDetail, "span", "font-mono text-[10px] text-on-surface-variant", "스위치");
-      appendTextElement(
-        switchDetail,
-        "span",
-        `font-mono text-xs font-bold ${stage.switch === "open" ? "text-tertiary" : "text-error"}`,
-        formatSwitchState(stage.switch)
-      );
+      const switchState = document.createElement("span");
+      switchState.className = `inline-flex items-center gap-0.5 font-mono text-xs font-bold ${switchPresentation.textClass}`;
+      appendTextElement(switchState, "span", "text-sm leading-none", switchPresentation.symbol);
+      appendTextElement(switchState, "span", "", formatSwitchState(stage.switch));
+      switchDetail.appendChild(switchState);
       details.appendChild(switchDetail);
     }
 
@@ -365,6 +377,39 @@ function appendStepDetail(parent, label, value) {
 
 function formatSwitchState(switchState) {
   return switchState === "closed" ? "닫힘" : "열림";
+}
+
+function getSwitchPresentation(switchState) {
+  if (switchState === "closed") {
+    return {
+      icon: "horizontal_rule",
+      symbol: "━",
+      label: "닫힘 · 침출",
+      ariaLabel: "닫힘, 침출 중",
+      textClass: "text-brew-amber",
+      badgeClass: "border-brew-amber/30 bg-brew-amber/10 text-brew-amber"
+    };
+  }
+  return {
+    icon: "arrow_downward",
+    symbol: "↓",
+    label: "열림 · 배출",
+    ariaLabel: "열림, 배출 중",
+    textClass: "text-tertiary",
+    badgeClass: "border-tertiary/30 bg-tertiary/10 text-tertiary"
+  };
+}
+
+function splitStageLabel(name) {
+  const normalizedName = typeof name === "string" ? name.trim() : "";
+  const match = normalizedName.match(/^(.*?)\s*\(([^()]*)\)\s*$/);
+  if (!match || !match[1].trim() || !match[2].trim()) {
+    return { title: normalizedName, detail: "" };
+  }
+  return {
+    title: match[1].trim(),
+    detail: match[2].trim()
+  };
 }
 
 // --- EVENT BINDINGS ---
@@ -820,4 +865,3 @@ function updateHotIceButtons() {
     btnIce.className = "flex-1 min-h-11 py-2 rounded-lg font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-all text-on-surface-variant hover:text-on-surface";
   }
 }
-

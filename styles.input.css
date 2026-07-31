@@ -42,6 +42,28 @@
     box-shadow: 0 0 12px rgba(229, 169, 59, 0.5);
   }
 
+  .timer-temperature-card {
+    --temperature-accent: #e5a93b;
+    --temperature-rgb: 229, 169, 59;
+    background:
+      radial-gradient(circle at 50% 115%, rgba(var(--temperature-rgb), 0.14), transparent 55%),
+      rgba(30, 32, 34, 0.72);
+    border: 1px solid rgba(var(--temperature-rgb), 0.42);
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.24);
+    transition: border-color 350ms ease, background 350ms ease;
+  }
+
+  .timer-temperature-badge {
+    color: var(--temperature-accent);
+    background: rgba(var(--temperature-rgb), 0.1);
+    border: 1px solid rgba(var(--temperature-rgb), 0.24);
+    transition: color 350ms ease, background-color 350ms ease, border-color 350ms ease;
+  }
+
+  body.timer-focus-active > #app > header {
+    display: none;
+  }
+
   .material-symbols-outlined {
     font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
   }

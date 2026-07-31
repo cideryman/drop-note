@@ -9,14 +9,19 @@ let unsafeHtmlAssignments = 0;
 const elements = new Map();
 function createElement() {
   let innerHTML = "";
+  const style = {
+    setProperty(name, value) {
+      this[name] = value;
+    }
+  };
   return {
     value: "",
     textContent: "",
     className: "",
-    style: {},
+    style,
     children: [],
     disabled: false,
-    classList: { add() {}, remove() {} },
+    classList: { add() {}, remove() {}, toggle() {} },
     addEventListener() {},
     appendChild(child) { this.children.push(child); return child; },
     remove() {},

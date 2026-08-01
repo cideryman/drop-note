@@ -1,6 +1,7 @@
 import fs from "node:fs";
 
 export const APP_SCRIPT_FILES = [
+  "theme.js",
   "recipes.js",
   "calculator.js",
   "storage.js",

@@ -279,7 +279,11 @@ function calculateAndRender() {
     finalYieldCard.classList.add("hidden");
     finalYieldCard.classList.remove("flex");
   }
-  document.getElementById("grind-display").textContent = currentRecipe.grindBase || "코만단테 24클릭";
+  document.getElementById("grind-display").textContent = currentRecipe.grindBase || "분쇄도 미지정";
+  document.getElementById("grind-reference-note").textContent = currentRecipe.grindNote
+    || (currentRecipe.isCustom
+      ? "사용자 설정 · 원두와 추출 시간에 맞춰 조절"
+      : "원두와 추출 시간에 맞춰 조절");
   updateDoseControls();
   updateRecipeMetadata();
   updateTemperatureTransitionNotice();
@@ -696,11 +700,11 @@ function setModalRecipeType(type) {
   hotButton.setAttribute("aria-pressed", (!isIce).toString());
   iceButton.setAttribute("aria-pressed", isIce.toString());
   hotButton.className = isIce
-    ? "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold text-on-surface-variant hover:text-white transition-all"
+    ? "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all"
     : "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold bg-primary-container text-on-primary transition-all";
   iceButton.className = isIce
     ? "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold bg-tertiary text-surface transition-all"
-    : "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold text-on-surface-variant hover:text-white transition-all";
+    : "flex-1 min-h-11 rounded-lg font-mono text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-all";
   document.getElementById("modal-type-help").textContent = isIce
     ? `입력한 단계 물량을 추출수로 사용하고 서버 얼음은 원두 대비 1:${ICE_FALLBACK_POLICY.iceRatio}로 계산합니다.`
     : "핫 레시피로 저장합니다.";
@@ -767,35 +771,35 @@ function addStageRowInModal(defaultName = "", defaultWater = 50, defaultTemp = 9
   const index = container.children.length + 1;
   const rowId = `stage-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const row = document.createElement("div");
-  row.className = "stage-builder-row bg-surface-container border border-white/5 rounded-xl p-2.5 flex flex-col gap-2 relative";
+  row.className = "stage-builder-row bg-surface-container border border-outline/10 rounded-xl p-2.5 flex flex-col gap-2 relative";
   row.innerHTML = `
     <div class="flex justify-between items-center">
       <span class="font-mono text-[11px] text-primary font-bold">${index}단계</span>
-      <button type="button" aria-label="${index}단계 삭제" class="btn-remove-stage-row min-h-11 px-2 text-error hover:text-white font-mono text-[10px]">삭제</button>
+      <button type="button" aria-label="${index}단계 삭제" class="btn-remove-stage-row min-h-11 px-2 text-error hover:text-on-surface font-mono text-[10px]">삭제</button>
     </div>
     <div class="grid grid-cols-2 gap-2">
-      <input type="text" maxlength="80" aria-label="${index}단계 이름" class="stage-name min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs text-white" placeholder="단계 이름"/>
-      <input type="number" min="0" max="1000" step="1" aria-label="${index}단계 물량" class="stage-water min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-2 py-1 text-xs font-mono text-white" placeholder="물량(g)"/>
+      <input type="text" maxlength="80" aria-label="${index}단계 이름" class="stage-name min-h-11 bg-surface-container-highest border border-outline/10 rounded-lg px-2 py-1 text-xs text-on-surface" placeholder="단계 이름"/>
+      <input type="number" min="0" max="1000" step="1" aria-label="${index}단계 물량" class="stage-water min-h-11 bg-surface-container-highest border border-outline/10 rounded-lg px-2 py-1 text-xs font-mono text-on-surface" placeholder="물량(g)"/>
     </div>
     <div class="grid grid-cols-2 gap-1.5">
       <div>
         <label for="${rowId}-temp" class="font-mono text-[9px] text-on-surface-variant block">온도(°C)</label>
-        <input id="${rowId}-temp" type="number" min="40" max="100" step="1" aria-label="${index}단계 온도" class="stage-temp min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white"/>
+        <input id="${rowId}-temp" type="number" min="40" max="100" step="1" aria-label="${index}단계 온도" class="stage-temp min-h-11 bg-surface-container-highest border border-outline/10 rounded-lg px-1.5 py-1 text-xs font-mono text-on-surface"/>
       </div>
       <div>
         <label for="${rowId}-time" class="font-mono text-[9px] text-on-surface-variant block">시간(초)</label>
-        <input id="${rowId}-time" type="number" min="1" max="600" step="1" aria-label="${index}단계 시간" class="stage-time min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1.5 py-1 text-xs font-mono text-white"/>
+        <input id="${rowId}-time" type="number" min="1" max="600" step="1" aria-label="${index}단계 시간" class="stage-time min-h-11 bg-surface-container-highest border border-outline/10 rounded-lg px-1.5 py-1 text-xs font-mono text-on-surface"/>
       </div>
       <div>
         <label for="${rowId}-switch" class="font-mono text-[9px] text-on-surface-variant block">스위치</label>
-        <select id="${rowId}-switch" aria-label="${index}단계 스위치 상태" class="stage-switch min-h-11 bg-surface-container-highest border border-white/5 rounded-lg px-1 py-1 text-xs font-mono text-white">
+        <select id="${rowId}-switch" aria-label="${index}단계 스위치 상태" class="stage-switch min-h-11 bg-surface-container-highest border border-outline/10 rounded-lg px-1 py-1 text-xs font-mono text-on-surface">
           <option value="open">열림</option>
           <option value="closed">닫힘</option>
         </select>
       </div>
       <div>
         <label for="${rowId}-guide" class="font-mono text-[9px] text-on-surface-variant block">저울 가이드</label>
-        <select id="${rowId}-guide" aria-label="${index}단계 저울 가이드" class="stage-guide-mode min-h-11 w-full bg-surface-container-highest border border-white/5 rounded-lg px-1 py-1 text-xs font-mono text-white">
+        <select id="${rowId}-guide" aria-label="${index}단계 저울 가이드" class="stage-guide-mode min-h-11 w-full bg-surface-container-highest border border-outline/10 rounded-lg px-1 py-1 text-xs font-mono text-on-surface">
           <option value="immediate">바로 목표량</option>
           <option value="linear">시간에 맞춰 증가</option>
           <option value="event">물 없는 동작</option>

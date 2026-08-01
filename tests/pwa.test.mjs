@@ -33,6 +33,7 @@ test("앱 셸과 서비스 워커 등록이 연결되어 있다", () => {
   for (const filename of [
     "index.html",
     "styles.css",
+    "theme.js",
     "recipes.js",
     "calculator.js",
     "storage.js",

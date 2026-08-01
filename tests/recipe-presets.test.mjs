@@ -22,6 +22,8 @@ assert.equal(totalTime(byId.kasuya_46), 210);
 assert.equal(byId.kasuya_46.creator, "테츠 카스야");
 assert.equal(byId.kasuya_46.recipeName, "4:6");
 assert.equal(byId.kasuya_46.equipmentLabel, "V60");
+assert.equal(byId.kasuya_46.grindBase, "C40 28–32클릭 · 굵게");
+assert.equal(byId.kasuya_46.grindReferenceType, "app-start");
 
 assert.equal(sumWater(byId.hario_switch_sweet), 280);
 assert.equal(byId.hario_switch_sweet.baseBeanWeight, 20);
@@ -29,6 +31,9 @@ assert.equal(totalTime(byId.hario_switch_sweet), 180);
 assert.equal(byId.hario_switch_sweet.creator, "테츠 카스야");
 assert.equal(byId.hario_switch_sweet.recipeName, "Devil");
 assert.equal(byId.hario_switch_sweet.equipmentLabel, "Switch");
+assert.equal(byId.hario_switch_sweet.grindBase, "C40 19–22클릭 · 중미세");
+assert.equal(byId.hario_switch_sweet.grindReferenceType, "recipe-reference");
+assert.match(byId.hario_switch_sweet.grindSourceUrl, /^https:\/\//);
 
 assert.equal(sumWater(byId.james_hoffmann_v60), 250);
 assert.equal(byId.james_hoffmann_v60.baseBeanWeight, 15);
@@ -36,6 +41,7 @@ assert.equal(totalTime(byId.james_hoffmann_v60), 210);
 assert.equal(byId.james_hoffmann_v60.creator, "제임스 호프만");
 assert.equal(byId.james_hoffmann_v60.recipeName, "Ultimate");
 assert.equal(byId.james_hoffmann_v60.equipmentLabel, "V60");
+assert.equal(byId.james_hoffmann_v60.grindReferenceType, "app-start");
 
 const iceRecipe = byId.ice_drip_classic;
 assert.equal(iceRecipe.creator, null);
@@ -46,6 +52,7 @@ assert.equal(iceRecipe.hotWaterTotal / iceRecipe.baseBeanWeight, 10);
 assert.equal(iceRecipe.iceWeight, 100);
 assert.equal(iceRecipe.hotWaterTotal + iceRecipe.iceWeight, iceRecipe.finalWaterTotal);
 assert.equal(iceRecipe.finalWaterTotal / iceRecipe.baseBeanWeight, 15);
+assert.equal(iceRecipe.grindReferenceType, "app-start");
 
 for (const recipe of recipes) {
   assert.equal("name" in recipe, false, `${recipe.id}: 조합된 제목을 원본 데이터에 중복 저장하지 않아야 합니다.`);
@@ -53,6 +60,9 @@ for (const recipe of recipes) {
   assert.ok(recipe.variantLabel, `${recipe.id}: 원본/변형 표시가 필요합니다.`);
   assert.ok(recipe.sourceLabel, `${recipe.id}: 출처 설명이 필요합니다.`);
   assert.equal(typeof recipe.isVariant, "boolean", `${recipe.id}: 원본/변형 상태가 필요합니다.`);
+  assert.match(recipe.grindBase, /^C40 /, `${recipe.id}: C40 표준 클릭 시작점을 표시해야 합니다.`);
+  assert.match(recipe.grindNote, /표준 클릭/, `${recipe.id}: 클릭 기준을 명시해야 합니다.`);
+  assert.match(recipe.grindNote, /Red Clix/, `${recipe.id}: Red Clix 환산 안내가 필요합니다.`);
   assert.ok(recipe.recommendedDoseMin < recipe.recommendedDoseMax, `${recipe.id}: 권장 원두량 범위가 올바르지 않습니다.`);
 
   let previousEndSec = 0;

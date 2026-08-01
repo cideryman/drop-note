@@ -380,7 +380,7 @@ function renderTimerStep(exactElapsedSeconds = totalSecondsElapsed) {
     appendTextElement(
       document.getElementById("timer-step-pour-desc"),
       "span",
-      "mx-1.5 text-white/25",
+      "mx-1.5 text-on-surface/25",
       "·"
     );
   }
@@ -434,15 +434,15 @@ function renderTimerStep(exactElapsedSeconds = totalSecondsElapsed) {
 
 function getTemperatureAccent(temp) {
   if (temp <= 79) {
-    return { color: "#74b9ff", rgb: "116, 185, 255" };
+    return { color: "rgb(var(--color-temperature-low))", rgb: "var(--color-temperature-low)" };
   }
   if (temp <= 86) {
-    return { color: "#58d6c7", rgb: "88, 214, 199" };
+    return { color: "rgb(var(--color-temperature-medium))", rgb: "var(--color-temperature-medium)" };
   }
   if (temp <= 92) {
-    return { color: "#e5a93b", rgb: "229, 169, 59" };
+    return { color: "rgb(var(--color-temperature-warm))", rgb: "var(--color-temperature-warm)" };
   }
-  return { color: "#ff8a65", rgb: "255, 138, 101" };
+  return { color: "rgb(var(--color-temperature-high))", rgb: "var(--color-temperature-high)" };
 }
 
 function applyTimerTemperatureAccent(temp) {

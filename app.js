@@ -3,6 +3,7 @@
 // Application bootstrap and PWA registration.
 // --- INITIALIZATION ---
 document.addEventListener("DOMContentLoaded", () => {
+  initializeTheme();
   loadRecipesFromStorage();
   bindEvents();
   updateHotIceButtons();

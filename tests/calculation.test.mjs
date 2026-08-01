@@ -253,7 +253,7 @@ assert.match(switchBeforeTemperaturePrep.instruction, /주입 완료/);
 const switchAtTemperaturePrep = renderTimerAt("hario_switch_sweet", 20, false, 45);
 assert.equal(switchAtTemperaturePrep.target, 120);
 assert.equal(switchAtTemperaturePrep.temperature, "90°C");
-assert.equal(switchAtTemperaturePrep.temperatureAccent, "#e5a93b");
+assert.equal(switchAtTemperaturePrep.temperatureAccent, "rgb(var(--color-temperature-warm))");
 assert.match(switchAtTemperaturePrep.instruction, /다음 단계 준비/);
 assert.match(switchAtTemperaturePrep.instruction, /1:15에 사용할 권장 70°C 물을 준비하세요/);
 assert.doesNotMatch(switchAtTemperaturePrep.instruction, /스위치.*닫/);
@@ -291,7 +291,7 @@ assert.match(iceAtFiftySeconds.instruction, /1:15까지 120g/);
 
 const switchAtLowTemperature = renderTimerAt("hario_switch_sweet", 20, false, 80);
 assert.equal(switchAtLowTemperature.temperature, "70°C");
-assert.equal(switchAtLowTemperature.temperatureAccent, "#74b9ff");
+assert.equal(switchAtLowTemperature.temperatureAccent, "rgb(var(--color-temperature-low))");
 assert.equal(switchAtLowTemperature.switchLabel, "닫힘 · 침출");
 assert.equal(switchAtLowTemperature.switchIcon, "horizontal_rule");
 assert.equal(switchAtLowTemperature.stageTitle, "3단계 · 저온 침출");
@@ -303,7 +303,7 @@ assert.equal(switchAtOpenValve.switchIcon, "arrow_downward");
 
 const hoffmannAtHighTemperature = renderTimerAt("james_hoffmann_v60", 15, false, 0);
 assert.equal(hoffmannAtHighTemperature.temperature, "97°C");
-assert.equal(hoffmannAtHighTemperature.temperatureAccent, "#ff8a65");
+assert.equal(hoffmannAtHighTemperature.temperatureAccent, "rgb(var(--color-temperature-high))");
 
 const legacyRecipe = vm.runInContext(`
   normalizeRecipeTimeline({

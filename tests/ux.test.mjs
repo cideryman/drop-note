@@ -22,9 +22,13 @@ assert.match(html, /<label for="new-base-bean"/);
 assert.match(html, /<label for="new-grind-size"/);
 
 assert.match(html, /id="btn-sound-toggle"[^>]*aria-label="소리 알림 끄기"/);
-assert.match(html, /id="btn-open-backup-modal"[^>]*aria-label=/);
+assert.match(html, /id="btn-open-backup-modal"[^>]*aria-label="설정 및 백업 열기"/);
 assert.match(html, /id="btn-close-modal"[^>]*aria-label=/);
 assert.match(html, /id="btn-close-backup-modal"[^>]*aria-label=/);
+assert.match(html, /화면 테마 선택/);
+assert.match(html, /data-theme-preference="system"[^>]*aria-pressed="true"/);
+assert.match(html, /data-theme-preference="light"[^>]*aria-pressed="false"/);
+assert.match(html, /data-theme-preference="dark"[^>]*aria-pressed="false"/);
 assert.match(html, /id="btn-timer-stop"[^>]*aria-label=/);
 assert.match(html, /id="btn-timer-toggle"[^>]*aria-label=/);
 assert.match(html, /id="btn-timer-skip"[^>]*aria-label=/);
@@ -39,6 +43,8 @@ assert.match(html, /id="timer-target-card"[^>]*timer-temperature-card/);
 assert.match(html, /권장 물 온도/);
 assert.match(html, /id="temperature-transition-notice"[^>]*role="note"/);
 assert.match(html, /id="temperature-transition-summary"/);
+assert.match(html, /id="grind-reference-note"/);
+assert.match(html, /Red Clix 약 2배/);
 assert.match(html, /id="timer-action-banner"[^>]*role="status"[^>]*aria-live="polite"/);
 assert.match(html, /id="timer-action-banner"[^>]*pointer-events-none/);
 assert.doesNotMatch(
@@ -77,7 +83,7 @@ for (const buttonId of [
 }
 
 assert.match(appScript, /confirm\("추출 타이머를 종료할까요\?/);
-assert.match(html, /href="styles\.css"/);
+assert.match(html, /href="styles\.css\?v=2\.7\.0"/);
 assert.doesNotMatch(html, /cdn\.tailwindcss\.com|tailwind\.config/);
 
 console.log("한국어·확대·레이블·터치 영역·종료 확인 UX 검증 완료");

@@ -153,7 +153,7 @@ const DEFAULT_RECIPES = [
 // 기존 사용자의 저장 데이터를 유지하기 위해 레거시 키 이름은 변경하지 않는다.
 const STORAGE_KEY = "POUROVER_PRO_CUSTOM_RECIPES";
 const BACKUP_FORMAT = "drop-note-recipes";
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 const ICE_FALLBACK_POLICY = Object.freeze({
   hotWaterRatio: 10,
   iceRatio: 5,

@@ -8,6 +8,7 @@ let wakeLockRequestPending = false;
 let timerInterval = null;
 let timerRunning = false;
 let timerCompleted = false;
+let timerPhase = "idle";
 let timerRunStartedAtMs = null;
 let timerElapsedBeforeRunMs = 0;
 let timerLastCountdownSecond = null;
@@ -17,6 +18,11 @@ let stepTimeRemaining = 0;
 let shownActionEventKeys = new Set();
 let actionBannerFadeTimer = null;
 let actionBannerHideTimer = null;
+let preparationInterval = null;
+let preparationCountdown = 3;
+let skipConfirmationUntil = 0;
+let skipConfirmationTimer = null;
+let scheduledCueTimers = [];
 // Web Audio Synthesizer
 let audioCtx = null;
 try {
@@ -26,25 +32,66 @@ try {
   console.warn("오디오 알림을 초기화하지 못했습니다:", error);
 }
 
-function playBeep(freq = 880, duration = 0.15, type = 'sine') {
-  if (!soundEnabled || !audioCtx) return;
+function unlockAudio() {
+  if (!soundEnabled || !audioCtx || audioCtx.state !== "suspended") return;
   try {
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
+    const resumeResult = audioCtx.resume();
+    resumeResult?.catch?.(() => {});
+  } catch (_) {}
+}
+
+function playTone(freq = 880, duration = 0.15, type = "sine", delayMs = 0) {
+  if (!soundEnabled || !audioCtx) return;
+  const play = () => {
+    try {
+      unlockAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (error) {
+      console.log("Audio error:", error);
     }
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + duration);
-  } catch (e) {
-    console.log('Audio error:', e);
+  };
+  if (delayMs > 0) {
+    scheduledCueTimers.push(setTimeout(play, delayMs));
+  } else {
+    play();
   }
+}
+
+function clearScheduledCues() {
+  scheduledCueTimers.forEach(clearTimeout);
+  scheduledCueTimers = [];
+}
+
+function playCue(kind) {
+  const cue = {
+    preparation: [[660, 0.1, "sine", 0]],
+    start: [[1040, 0.22, "sine", 0]],
+    warning: [[600, 0.1, "sine", 0]],
+    stage: [[1200, 0.25, "sine", 0]],
+    temperature: [[760, 0.11, "sine", 0], [980, 0.11, "sine", 150]],
+    action: [[900, 0.1, "sine", 0], [650, 0.1, "sine", 140]],
+    complete: [[1500, 0.5, "triangle", 0]],
+    confirm: [[1000, 0.12, "sine", 0]]
+  }[kind];
+  if (!cue) return false;
+  cue.forEach(([freq, duration, type, delay]) => playTone(freq, duration, type, delay));
+  return true;
+}
+
+function playBeep(freq = 880, duration = 0.15, type = "sine") {
+  // Legacy helper retained for recipe save/export feedback.
+  try {
+    playTone(freq, duration, type);
+  } catch (_) {}
 }
 // --- TIMER ENGINE & LIVE VIEW ---
 function getTotalBrewTime() {
@@ -73,18 +120,20 @@ function syncTimerStepToElapsed() {
 
 function startTimerView() {
   if (scaledStages.length === 0) return;
+  unlockAudio();
 
   document.body.classList.add("timer-focus-active");
   document.getElementById("view-calculator").classList.add("hidden");
   document.getElementById("calculator-action-bar").classList.add("hidden");
 
   document.getElementById("view-timer").classList.remove("hidden");
-  document.getElementById("timer-control-bar").classList.remove("hidden");
+  document.getElementById("timer-control-bar").classList.add("hidden");
 
   clearInterval(timerInterval);
   timerInterval = null;
   timerRunning = false;
   timerCompleted = false;
+  timerPhase = "preparing";
   timerRunStartedAtMs = null;
   timerElapsedBeforeRunMs = 0;
   timerLastCountdownSecond = null;
@@ -97,25 +146,123 @@ function startTimerView() {
   resetTimerControls();
   updateTimerCapabilityStatus();
   renderTimerStep();
-  startTimerInterval();
+  beginTimerPreparation();
 }
 
-function stopTimerView() {
-  const needsConfirmation = !timerCompleted && (timerRunning || totalSecondsElapsed > 0);
-  if (needsConfirmation && !confirm("추출 타이머를 종료할까요? 현재 진행 상황은 저장되지 않습니다.")) {
-    return false;
-  }
+function getPreparationSummary() {
+  const temperatures = [...new Set(scaledStages.map(stage => stage.temp))];
+  const waterText = isIceMode
+    ? `추출수 ${scaledTotalWater}g · 얼음 ${scaledIceWeight}g`
+    : `추출수 ${scaledTotalWater}g`;
+  return {
+    title: getRecipeDisplayName(currentRecipe),
+    dose: `원두 ${currentBeanWeight}g · ${waterText}`,
+    grind: currentRecipe.grindBase,
+    temperature: temperatures.length > 1
+      ? `물 온도 ${temperatures.join(" → ")}°C`
+      : `물 온도 ${temperatures[0]}°C`
+  };
+}
 
-  releaseWakeLock();
+function renderPreparationCountdown(value) {
+  const summary = getPreparationSummary();
+  document.getElementById("preparation-recipe-name").textContent = summary.title;
+  document.getElementById("preparation-dose").textContent = summary.dose;
+  document.getElementById("preparation-grind").textContent = summary.grind;
+  document.getElementById("preparation-temperature").textContent = summary.temperature;
+  const countdown = document.getElementById("preparation-countdown");
+  countdown.textContent = String(value);
+  countdown.classList.remove("preparation-countdown");
+  void countdown.offsetWidth;
+  countdown.classList.add("preparation-countdown");
+  document.getElementById("preparation-status").textContent = value > 1 ? "주전자와 저울을 준비하세요" : "첫 주입을 준비하세요";
+}
+
+function beginTimerPreparation() {
+  clearInterval(preparationInterval);
+  clearScheduledCues();
+  preparationCountdown = 3;
+  timerPhase = "preparing";
+  timerRunning = false;
+  timerCompleted = false;
+  document.getElementById("timer-preparation-panel").classList.remove("hidden");
+  document.getElementById("timer-preparation-panel").classList.add("flex");
+  document.getElementById("timer-control-bar").classList.add("hidden");
+  renderPreparationCountdown(preparationCountdown);
+  playCue("preparation");
+  preparationInterval = setInterval(advanceTimerPreparation, 1000);
+}
+
+function advanceTimerPreparation() {
+  if (timerPhase !== "preparing") return false;
+  preparationCountdown -= 1;
+  if (preparationCountdown > 0) {
+    renderPreparationCountdown(preparationCountdown);
+    playCue("preparation");
+    return true;
+  }
+  clearInterval(preparationInterval);
+  preparationInterval = null;
+  document.getElementById("preparation-countdown").textContent = "시작";
+  document.getElementById("preparation-status").textContent = "첫 주입을 시작하세요";
+  document.getElementById("timer-preparation-panel").classList.add("hidden");
+  document.getElementById("timer-preparation-panel").classList.remove("flex");
+  document.getElementById("timer-control-bar").classList.remove("hidden");
+  return startTimerInterval();
+}
+
+function cancelTimerPreparation(message = "") {
+  if (timerPhase !== "preparing") return false;
+  clearInterval(preparationInterval);
+  preparationInterval = null;
+  clearScheduledCues();
+  stopTimerView({ skipConfirmation: true });
+  if (message) updateTimerCapabilityStatus(message);
+  return true;
+}
+
+function restartSameBrew() {
+  if (timerPhase !== "completed") return false;
+  closeTasteEvaluation();
   clearInterval(timerInterval);
   timerInterval = null;
   timerRunning = false;
   timerCompleted = false;
   timerRunStartedAtMs = null;
   timerElapsedBeforeRunMs = 0;
+  totalSecondsElapsed = 0;
+  currentStepIndex = 0;
+  stepTimeRemaining = scaledStages[0].stepEndSec;
+  shownActionEventKeys = new Set();
+  resetTimerControls();
+  renderTimerStep();
+  beginTimerPreparation();
+  return true;
+}
+
+function stopTimerView(options = {}) {
+  const needsConfirmation = !options.skipConfirmation && !timerCompleted && (timerRunning || totalSecondsElapsed > 0);
+  if (needsConfirmation && !confirm("추출 타이머를 종료할까요? 현재 진행 상황은 저장되지 않습니다.")) {
+    return false;
+  }
+
+  releaseWakeLock();
+  clearInterval(timerInterval);
+  clearInterval(preparationInterval);
+  timerInterval = null;
+  preparationInterval = null;
+  clearScheduledCues();
+  clearSkipConfirmation();
+  timerRunning = false;
+  timerCompleted = false;
+  timerPhase = "idle";
+  timerRunStartedAtMs = null;
+  timerElapsedBeforeRunMs = 0;
   timerLastCountdownSecond = null;
   shownActionEventKeys = new Set();
   hideActionBanner(true);
+  document.getElementById("timer-preparation-panel").classList.add("hidden");
+  document.getElementById("timer-preparation-panel").classList.remove("flex");
   document.body.classList.remove("timer-focus-active");
 
   document.getElementById("view-timer").classList.add("hidden");
@@ -134,15 +281,20 @@ function scheduleTimerTicks() {
 function startTimerInterval(nowMs = getCurrentTimeMs()) {
   if (timerRunning || timerCompleted) return false;
 
+  const isFreshStart = timerElapsedBeforeRunMs === 0 && timerPhase === "preparing";
   timerRunStartedAtMs = nowMs;
   timerRunning = true;
+  timerPhase = "running";
   timerLastCountdownSecond = null;
   updatePlayPauseButtonUI();
   document.getElementById("timer-status-badge").textContent = "추출 중";
   document.getElementById("timer-status-badge").className = "font-mono text-xs text-brew-green font-bold tracking-widest";
   scheduleTimerTicks();
   requestWakeLock();
-  if (timerElapsedBeforeRunMs === 0) playBeep(880, 0.2);
+  if (isFreshStart) {
+    playCue("start");
+    recordRecentRecipeUse();
+  }
   return true;
 }
 
@@ -161,7 +313,16 @@ function timerTick(nowMs = getCurrentTimeMs()) {
 
   if (currentStepIndex !== previousStepIndex) {
     timerLastCountdownSecond = null;
-    playBeep(1200, 0.3);
+    const previousStage = scaledStages[previousStepIndex];
+    const currentStage = scaledStages[currentStepIndex];
+    const actionEvent = getStageActionEvent(currentStage, currentStepIndex);
+    if (previousStage && previousStage.temp !== currentStage.temp) {
+      playCue("temperature");
+    } else if (actionEvent) {
+      playCue("action");
+    } else {
+      playCue("stage");
+    }
     if (navigator.vibrate) navigator.vibrate([150, 50, 150]);
   } else if (
     stepTimeRemaining <= 3 &&
@@ -169,7 +330,7 @@ function timerTick(nowMs = getCurrentTimeMs()) {
     timerLastCountdownSecond !== stepTimeRemaining
   ) {
     timerLastCountdownSecond = stepTimeRemaining;
-    playBeep(600, 0.1);
+    playCue("warning");
     if (navigator.vibrate) navigator.vibrate(100);
   }
 
@@ -180,9 +341,11 @@ function timerTick(nowMs = getCurrentTimeMs()) {
 function pauseTimer(nowMs = getCurrentTimeMs()) {
   if (!timerRunning || timerCompleted) return false;
 
+  clearScheduledCues();
   timerElapsedBeforeRunMs = getTimerElapsedMs(nowMs);
   timerRunStartedAtMs = null;
   timerRunning = false;
+  timerPhase = "paused";
   clearInterval(timerInterval);
   timerInterval = null;
   releaseWakeLock();
@@ -202,7 +365,10 @@ function pauseTimer(nowMs = getCurrentTimeMs()) {
 }
 
 function toggleTimerPlayPause() {
-  if (timerCompleted) return;
+  if (timerCompleted) {
+    restartSameBrew();
+    return;
+  }
   if (timerRunning) {
     pauseTimer();
   } else {
@@ -216,12 +382,12 @@ function updatePlayPauseButtonUI() {
   const btn = document.getElementById("btn-timer-toggle");
 
   if (timerCompleted) {
-    icon.textContent = "check";
-    text.textContent = "추출 완료";
-    btn.disabled = true;
-    btn.setAttribute("aria-disabled", "true");
-    btn.setAttribute("aria-label", "추출 완료");
-    btn.className = "min-h-11 flex-grow flex items-center justify-center gap-2 bg-surface-container-highest text-on-surface-variant py-3.5 px-6 rounded-2xl font-mono font-bold opacity-60 cursor-not-allowed";
+    icon.textContent = "replay";
+    text.textContent = "같은 레시피 다시 추출";
+    btn.disabled = false;
+    btn.setAttribute("aria-disabled", "false");
+    btn.setAttribute("aria-label", "같은 레시피 다시 추출");
+    btn.className = "min-h-11 flex-grow flex items-center justify-center gap-2 bg-primary-container text-on-primary py-3.5 px-4 rounded-2xl font-mono font-bold shadow-lg active:scale-[0.98] transition-all";
     return;
   }
 
@@ -245,7 +411,32 @@ function resetTimerControls() {
   skipButton.disabled = false;
   skipButton.setAttribute("aria-disabled", "false");
   skipButton.classList.remove("opacity-40", "cursor-not-allowed");
+  clearSkipConfirmation();
   updatePlayPauseButtonUI();
+}
+
+function clearSkipConfirmation() {
+  clearTimeout(skipConfirmationTimer);
+  skipConfirmationTimer = null;
+  skipConfirmationUntil = 0;
+  const label = document.getElementById("timer-skip-label");
+  const button = document.getElementById("btn-timer-skip");
+  if (label) label.textContent = "다음 단계";
+  if (button && !button.disabled) button.setAttribute("aria-label", "다음 추출 단계로 건너뛰기");
+}
+
+function requestSkipToNextStep(nowMs = getCurrentTimeMs()) {
+  if (timerCompleted || timerPhase === "preparing") return false;
+  if (nowMs <= skipConfirmationUntil) {
+    clearSkipConfirmation();
+    return skipToNextStep();
+  }
+  skipConfirmationUntil = nowMs + 3000;
+  document.getElementById("timer-skip-label").textContent = "한 번 더";
+  document.getElementById("btn-timer-skip").setAttribute("aria-label", "한 번 더 눌러 다음 단계로 건너뛰기");
+  playCue("confirm");
+  skipConfirmationTimer = setTimeout(clearSkipConfirmation, 3000);
+  return false;
 }
 
 function skipToNextStep() {
@@ -257,7 +448,7 @@ function skipToNextStep() {
     if (timerRunning) timerRunStartedAtMs = getCurrentTimeMs();
     stepTimeRemaining = scaledStages[currentStepIndex].stepEndSec - totalSecondsElapsed;
     timerLastCountdownSecond = null;
-    playBeep(1000, 0.15);
+    playCue("stage");
     renderTimerStep();
     return true;
   } else {
@@ -273,6 +464,7 @@ function finishBrewing() {
   timerInterval = null;
   timerRunning = false;
   timerCompleted = true;
+  timerPhase = "completed";
   timerRunStartedAtMs = null;
   totalSecondsElapsed = getTotalBrewTime();
   timerElapsedBeforeRunMs = totalSecondsElapsed * 1000;
@@ -280,7 +472,7 @@ function finishBrewing() {
   currentStepIndex = Math.max(0, scaledStages.length - 1);
   hideActionBanner(true);
   releaseWakeLock();
-  playBeep(1500, 0.5, 'triangle');
+  playCue("complete");
   if (navigator.vibrate) navigator.vibrate([200, 100, 300]);
 
   document.getElementById("timer-display").textContent = "완료";
@@ -298,6 +490,8 @@ function finishBrewing() {
   skipButton.setAttribute("aria-disabled", "true");
   skipButton.classList.add("opacity-40", "cursor-not-allowed");
   updatePlayPauseButtonUI();
+  const record = createBrewHistoryRecord();
+  if (record) openTasteEvaluation(record.id);
   return true;
 }
 
@@ -418,12 +612,15 @@ function renderTimerStep(exactElapsedSeconds = totalSecondsElapsed) {
   if (currentStepIndex < totalSteps - 1) {
     const nextSt = scaledStages[currentStepIndex + 1];
     const nextStageLabel = splitStageLabel(nextSt.name);
-    document.getElementById("timer-next-label").textContent = nextStageLabel.detail
-      ? `다음: ${nextSt.step}단계 · ${nextStageLabel.detail}`
-      : `다음: ${nextSt.step}단계`;
+    const changes = [];
+    if (nextSt.temp !== st.temp) changes.push(`${nextSt.temp}°C`);
+    if (currentRecipe.equipment === "Hario Switch" && nextSt.switch !== st.switch) {
+      changes.push(nextSt.switch === "closed" ? "Switch 닫기" : "Switch 열기");
+    }
+    document.getElementById("timer-next-label").textContent = `다음 ${formatBrewTime(nextSt.startSec)} · ${nextSt.step}단계`;
     document.getElementById("timer-next-desc").textContent = nextSt.scaledWater > 0
-      ? `${nextStageLabel.title} · +${nextSt.scaledWater}g`
-      : nextStageLabel.title;
+      ? `${nextSt.cumulativeTarget}g까지${changes.length ? ` · ${changes.join(" · ")}` : ""}`
+      : `${nextStageLabel.title}${changes.length ? ` · ${changes.join(" · ")}` : ""}`;
     document.getElementById("timer-next-time").textContent = `${formatBrewTime(nextSt.startSec)} 시작`;
   } else {
     document.getElementById("timer-next-label").textContent = "다음: 추출 완료";
@@ -519,6 +716,7 @@ function getStageActionEvent(stage, stageIndex) {
 }
 
 function maybeShowActionBanner(stage, exactElapsedSeconds) {
+  if (timerPhase === "preparing") return false;
   const event = getStageActionEvent(stage, currentStepIndex);
   if (!event || exactElapsedSeconds < stage.startSec || exactElapsedSeconds > stage.startSec + 2) {
     return false;
@@ -595,6 +793,10 @@ function updateTimerCapabilityStatus(message = "") {
 }
 
 function handleTimerVisibilityChange() {
+  if (timerPhase === "preparing" && document.visibilityState === "hidden") {
+    cancelTimerPreparation();
+    return;
+  }
   if (!timerRunning || timerCompleted) return;
 
   if (document.visibilityState === "hidden") {

@@ -1,14 +1,15 @@
-const CACHE_NAME = 'drip-note-v2.2';
+const CACHE_NAME = 'drip-note-v3.0';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=2.8.0',
-  './theme.js?v=2.8.0',
-  './recipes.js?v=2.8.0',
-  './calculator.js?v=2.8.0',
-  './storage.js?v=2.8.0',
-  './timer.js?v=2.8.0',
-  './app.js?v=2.8.0',
+  './styles.css?v=3.0.0',
+  './theme.js?v=3.0.0',
+  './recipes.js?v=3.0.0',
+  './calculator.js?v=3.0.0',
+  './storage.js?v=3.0.0',
+  './history.js?v=3.0.0',
+  './timer.js?v=3.0.0',
+  './app.js?v=3.0.0',
   './manifest.json',
   './icon.svg',
   './icon-180.png',

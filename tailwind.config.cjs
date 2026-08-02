@@ -4,6 +4,7 @@ module.exports = {
     "./recipes.js",
     "./calculator.js",
     "./storage.js",
+    "./history.js",
     "./timer.js",
     "./theme.js",
     "./app.js"

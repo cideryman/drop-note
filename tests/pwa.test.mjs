@@ -37,6 +37,7 @@ test("앱 셸과 서비스 워커 등록이 연결되어 있다", () => {
     "recipes.js",
     "calculator.js",
     "storage.js",
+    "history.js",
     "timer.js",
     "app.js",
     "manifest.json",

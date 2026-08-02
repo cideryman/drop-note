@@ -5,6 +5,7 @@ export const APP_SCRIPT_FILES = [
   "recipes.js",
   "calculator.js",
   "storage.js",
+  "history.js",
   "timer.js",
   "app.js"
 ];

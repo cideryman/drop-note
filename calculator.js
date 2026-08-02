@@ -18,10 +18,31 @@ const TEMPERATURE_MIN_PREP_DURATION_SEC = 5;
 function renderRecipeDropdown() {
   const select = document.getElementById("recipe-select");
   select.textContent = "";
-  allRecipes.forEach(recipe => {
+  const byId = new Map(allRecipes.map(recipe => [recipe.id, recipe]));
+  const used = new Set();
+  const groups = [
+    { label: "즐겨찾기", recipes: favoriteRecipeIds.map(id => byId.get(id)).filter(Boolean) },
+    { label: "최근 사용", recipes: recentRecipeIds.map(id => byId.get(id)).filter(Boolean) },
+    { label: "모든 레시피", recipes: allRecipes }
+  ];
+  groups.forEach(group => {
+    const recipes = group.recipes.filter(recipe => !used.has(recipe.id));
+    if (recipes.length === 0) return;
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group.label;
+    recipes.forEach(recipe => {
+      used.add(recipe.id);
+      const option = document.createElement("option");
+      option.value = recipe.id;
+      option.textContent = getRecipeDisplayName(recipe);
+      optgroup.appendChild(option);
+    });
+    select.appendChild(optgroup);
+  });
+  if (used.size === 0) allRecipes.forEach(recipe => {
     const option = document.createElement("option");
     option.value = recipe.id;
-    option.textContent = `${recipe.isCustom ? "⭐ " : ""}${getRecipeDisplayName(recipe)}`;
+    option.textContent = getRecipeDisplayName(recipe);
     select.appendChild(option);
   });
 
@@ -29,6 +50,7 @@ function renderRecipeDropdown() {
     select.value = currentRecipe.id;
   }
   updateDeleteButtonVisibility();
+  updateFavoriteButton();
 }
 
 function updateDeleteButtonVisibility() {
@@ -159,6 +181,7 @@ function updateRecipeMetadata() {
     : "rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary";
   document.getElementById("recipe-equipment").textContent = getEquipmentLabel(currentRecipe);
   document.getElementById("brew-mode-description").textContent = metadata.description;
+  updateFavoriteButton();
 
   if (currentRecipe.sourceUrl) {
     sourceLink.href = currentRecipe.sourceUrl;
@@ -605,8 +628,10 @@ function bindEvents() {
   document.getElementById("btn-start-brew").addEventListener("click", startTimerView);
   document.getElementById("btn-timer-stop").addEventListener("click", stopTimerView);
   document.getElementById("btn-timer-toggle").addEventListener("click", toggleTimerPlayPause);
-  document.getElementById("btn-timer-skip").addEventListener("click", skipToNextStep);
+  document.getElementById("btn-timer-skip").addEventListener("click", requestSkipToNextStep);
+  document.getElementById("btn-cancel-preparation").addEventListener("click", cancelTimerPreparation);
   document.addEventListener("visibilitychange", handleTimerVisibilityChange);
+  bindHistoryEvents();
 }
 
 // --- MODAL & CUSTOM RECIPE BUILDER ---

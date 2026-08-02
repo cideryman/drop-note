@@ -471,9 +471,49 @@ function startFakeTimer(recipeId = "kasuya_46", startMs = 100_000) {
     fakeNowMs = ${startMs};
     getCurrentTimeMs = () => fakeNowMs;
     startTimerView();
-    ({ timerRunning, timerCompleted, totalSecondsElapsed });
+    advanceTimerPreparation();
+    advanceTimerPreparation();
+    advanceTimerPreparation();
+    ({ timerRunning, timerCompleted, timerPhase, totalSecondsElapsed });
   `, context);
 }
+
+const preparationState = vm.runInContext(`
+  currentRecipe = DEFAULT_RECIPES.find(recipe => recipe.id === "kasuya_46");
+  currentBeanWeight = 20;
+  isIceMode = false;
+  calculateAndRender();
+  fakeNowMs = 90_000;
+  getCurrentTimeMs = () => fakeNowMs;
+  startTimerView();
+  const before = { timerRunning, timerPhase, elapsed: totalSecondsElapsed, wakeLock };
+  advanceTimerPreparation();
+  advanceTimerPreparation();
+  const during = { timerRunning, timerPhase, elapsed: totalSecondsElapsed };
+  advanceTimerPreparation();
+  ({ before, during, after: { timerRunning, timerPhase, elapsed: totalSecondsElapsed, startedAt: timerRunStartedAtMs } });
+`, context);
+assert.deepEqual(JSON.parse(JSON.stringify(preparationState)), {
+  before: { timerRunning: false, timerPhase: "preparing", elapsed: 0, wakeLock: null },
+  during: { timerRunning: false, timerPhase: "preparing", elapsed: 0 },
+  after: { timerRunning: true, timerPhase: "running", elapsed: 0, startedAt: 90000 }
+});
+
+const hiddenPreparation = vm.runInContext(`
+  stopTimerView({ skipConfirmation: true });
+  document.visibilityState = "visible";
+  startTimerView();
+  document.visibilityState = "hidden";
+  handleTimerVisibilityChange();
+  const result = { timerRunning, timerPhase, elapsed: totalSecondsElapsed };
+  document.visibilityState = "visible";
+  result;
+`, context);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(hiddenPreparation)),
+  { timerRunning: false, timerPhase: "idle", elapsed: 0 },
+  "준비 중 백그라운드로 이동하면 추출을 시작하지 않아야 합니다."
+);
 
 startFakeTimer();
 const driftRecovery = vm.runInContext(`
@@ -522,6 +562,19 @@ assert.deepEqual(
 );
 
 startFakeTimer("kasuya_46", 400_000);
+const guardedSkip = vm.runInContext(`
+  const first = requestSkipToNextStep(fakeNowMs);
+  const afterFirst = currentStepIndex;
+  const second = requestSkipToNextStep(fakeNowMs + 500);
+  ({ first, afterFirst, second, afterSecond: currentStepIndex });
+`, context);
+assert.deepEqual(
+  JSON.parse(JSON.stringify(guardedSkip)),
+  { first: false, afterFirst: 0, second: true, afterSecond: 1 },
+  "단계 건너뛰기는 3초 안에 두 번 눌러야 실행되어야 합니다."
+);
+
+startFakeTimer("kasuya_46", 400_000);
 const skipRecovery = vm.runInContext(`
   fakeNowMs += 5_000;
   timerTick();
@@ -561,7 +614,7 @@ assert.deepEqual(
     timerCompleted: true,
     timerInterval: null,
     elapsed: 210,
-    toggleDisabled: true,
+    toggleDisabled: false,
     skipDisabled: true
   },
   "완료 이후 인터벌과 Resume·Skip 동작을 중복 실행하지 않아야 합니다."
@@ -599,6 +652,9 @@ const wakeLockRecovery = await vm.runInContext(`
     getCurrentTimeMs = () => fakeNowMs;
     document.visibilityState = "visible";
     startTimerView();
+    advanceTimerPreparation();
+    advanceTimerPreparation();
+    advanceTimerPreparation();
     await Promise.resolve();
     document.visibilityState = "hidden";
     handleTimerVisibilityChange();

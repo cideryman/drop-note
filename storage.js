@@ -17,6 +17,7 @@ function loadRecipesFromStorage() {
   currentBeanWeight = currentRecipe.baseBeanWeight;
   isIceMode = currentRecipe.type === "ice";
 
+  loadUserBrewData();
   renderRecipeDropdown();
 }
 
@@ -200,9 +201,13 @@ function validateRecipeCollection(recipes, { source = "백업" } = {}) {
   return recipes.map(sanitizeImportedRecipe);
 }
 
-function parseBackupPayload(payload) {
+function parseBackupBundle(payload) {
   if (Array.isArray(payload)) {
-    return validateRecipeCollection(payload, { source: "이전 형식 백업" });
+    return {
+      recipes: validateRecipeCollection(payload, { source: "이전 형식 백업" }),
+      brewHistory: [],
+      recipePreferences: { favoriteRecipeIds: [], recentRecipeIds: [] }
+    };
   }
   if (!payload || typeof payload !== "object") {
     throw new Error("올바른 백업 데이터가 아닙니다.");
@@ -210,16 +215,37 @@ function parseBackupPayload(payload) {
   if (payload.format !== BACKUP_FORMAT) {
     throw new Error("드립노트 백업 파일이 아닙니다.");
   }
-  if (payload.version !== BACKUP_VERSION) {
-    throw new Error(`지원하지 않는 백업 버전입니다. 현재 지원 버전: ${BACKUP_VERSION}`);
+  if (![1, BACKUP_VERSION].includes(payload.version)) {
+    throw new Error(`지원하지 않는 백업 버전입니다. 지원 버전: 1–${BACKUP_VERSION}`);
   }
-  return validateRecipeCollection(payload.recipes);
+  return {
+    recipes: validateRecipeCollection(payload.recipes),
+    brewHistory: payload.version >= 2
+      ? sanitizeBrewHistory(payload.brewHistory || [], { strict: true })
+      : [],
+    recipePreferences: payload.version >= 2 && payload.recipePreferences && typeof payload.recipePreferences === "object"
+      ? {
+        favoriteRecipeIds: normalizeIdList(payload.recipePreferences.favoriteRecipeIds || []),
+        recentRecipeIds: normalizeIdList(payload.recipePreferences.recentRecipeIds || [], MAX_RECENT_RECIPES)
+      }
+      : { favoriteRecipeIds: [], recentRecipeIds: [] }
+  };
+}
+
+function parseBackupPayload(payload) {
+  return parseBackupBundle(payload).recipes;
 }
 
 function mergeImportedRecipes(existingRecipes, importedRecipes) {
+  return mergeImportedRecipesWithIdMap(existingRecipes, importedRecipes).recipes;
+}
+
+function mergeImportedRecipesWithIdMap(existingRecipes, importedRecipes) {
   const usedIds = new Set(existingRecipes.map(recipe => recipe.id));
   const merged = [...existingRecipes];
+  const idMap = new Map();
   importedRecipes.forEach((recipe, index) => {
+    const originalId = recipe.id;
     let id = recipe.id;
     if (!id || usedIds.has(id)) {
       do {
@@ -227,15 +253,17 @@ function mergeImportedRecipes(existingRecipes, importedRecipes) {
       } while (usedIds.has(id));
     }
     usedIds.add(id);
+    if (originalId) idMap.set(originalId, id);
     merged.push({ ...recipe, id, isCustom: true });
   });
-  return merged;
+  return { recipes: merged, idMap };
 }
 
 function exportRecipesToJSON() {
   const customOnly = allRecipes.filter(r => r.isCustom);
-  if (customOnly.length === 0) {
-    alert("백업할 커스텀 레시피가 없습니다. 레시피를 먼저 추가해주세요!");
+  const userData = getBrewBackupData();
+  if (customOnly.length === 0 && userData.brewHistory.length === 0 && userData.recipePreferences.favoriteRecipeIds.length === 0) {
+    alert("백업할 레시피나 추출 기록이 없습니다.");
     return;
   }
 
@@ -243,7 +271,9 @@ function exportRecipesToJSON() {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    recipes: customOnly
+    recipes: customOnly,
+    brewHistory: userData.brewHistory,
+    recipePreferences: userData.recipePreferences
   };
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
   const downloadAnchor = document.createElement('a');
@@ -263,16 +293,18 @@ function importRecipesFromJSON(e) {
   const reader = new FileReader();
   reader.onload = function(evt) {
     try {
-      const importedRecipes = parseBackupPayload(JSON.parse(evt.target.result));
+      const importedBundle = parseBackupBundle(JSON.parse(evt.target.result));
+      const importedRecipes = importedBundle.recipes;
       const existingCustom = allRecipes.filter(r => r.isCustom);
-      const merged = mergeImportedRecipes(existingCustom, importedRecipes);
-      if (!saveCustomRecipesToStorage(merged)) {
+      const mergeResult = mergeImportedRecipesWithIdMap(existingCustom, importedRecipes);
+      if (!saveCustomRecipesToStorage(mergeResult.recipes)) {
         throw new Error("브라우저 저장 공간에 기록하지 못했습니다. 기존 레시피는 변경되지 않았습니다.");
       }
       loadRecipesFromStorage();
+      mergeImportedBrewData(importedBundle, mergeResult.idMap);
       calculateAndRender();
 
-      alert(`총 ${importedRecipes.length}개의 레시피를 성공적으로 복원했습니다!`);
+      alert(`레시피 ${importedRecipes.length}개와 추출 기록 ${importedBundle.brewHistory.length}개를 복원했습니다.`);
       document.getElementById("modal-backup").classList.add("hidden");
       document.getElementById("btn-open-backup-modal").setAttribute("aria-expanded", "false");
       playBeep(1500, 0.3);
@@ -288,4 +320,3 @@ function importRecipesFromJSON(e) {
   };
   reader.readAsText(file);
 }
-

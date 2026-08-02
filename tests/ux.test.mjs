@@ -32,6 +32,11 @@ assert.match(html, /data-theme-preference="dark"[^>]*aria-pressed="false"/);
 assert.match(html, /id="btn-timer-stop"[^>]*aria-label=/);
 assert.match(html, /id="btn-timer-toggle"[^>]*aria-label=/);
 assert.match(html, /id="btn-timer-skip"[^>]*aria-label=/);
+assert.match(html, /id="btn-toggle-favorite"[^>]*aria-pressed="false"/);
+assert.match(html, /id="btn-large-timer-toggle"[^>]*aria-pressed="false"/);
+assert.match(html, /id="timer-preparation-panel"[^>]*aria-live="assertive"/);
+assert.match(html, /id="modal-taste-evaluation"[^>]*role="dialog"[^>]*aria-modal="true"/);
+assert.match(html, /id="modal-brew-history"[^>]*role="dialog"[^>]*aria-modal="true"/);
 
 assert.match(html, /id="modal-add-recipe"[^>]*role="dialog"[^>]*aria-modal="true"/);
 assert.match(html, /id="modal-backup"[^>]*role="dialog"[^>]*aria-modal="true"/);
@@ -63,6 +68,10 @@ assert.match(appScript, /다음 단계 준비/);
 assert.match(appScript, /function getStageActionEvent\(stage, stageIndex\)/);
 assert.match(appScript, /스위치를 닫으세요/);
 assert.match(appScript, /교반하고 스월링하세요/);
+assert.match(appScript, /function playCue\(kind\)/);
+assert.match(appScript, /function beginTimerPreparation\(\)/);
+assert.match(appScript, /DRIP_NOTE_BREW_HISTORY/);
+assert.match(appScript, /DRIP_NOTE_FAVORITES/);
 assert.match(sourceCss, /@media \(prefers-reduced-motion: reduce\)/);
 
 for (const buttonId of [
@@ -76,14 +85,20 @@ for (const buttonId of [
   "btn-start-brew",
   "btn-timer-stop",
   "btn-timer-toggle",
-  "btn-timer-skip"
+  "btn-timer-skip",
+  "btn-toggle-favorite",
+  "btn-large-timer-toggle",
+  "btn-cancel-preparation",
+  "btn-open-brew-history",
+  "btn-save-taste",
+  "btn-skip-taste"
 ]) {
   const button = html.match(new RegExp(`<button id="${buttonId}"[^>]*>`))?.[0] ?? "";
   assert.match(button, /(?:min-h-11|h-12)/, `${buttonId}: 터치 높이는 최소 44px여야 합니다.`);
 }
 
 assert.match(appScript, /confirm\("추출 타이머를 종료할까요\?/);
-assert.match(html, /href="styles\.css\?v=2\.8\.0"/);
+assert.match(html, /href="styles\.css\?v=3\.0\.0"/);
 assert.match(sourceCss, /\.theme-option-active/);
 assert.match(sourceCss, /html\.theme-transitioning/);
 assert.doesNotMatch(html, /cdn\.tailwindcss\.com|tailwind\.config/);

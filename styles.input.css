@@ -150,6 +150,41 @@
     font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24;
   }
 
+  .taste-choice {
+    color: rgb(var(--color-on-surface-variant));
+    background: rgb(var(--color-surface-container-highest) / 0.45);
+  }
+
+  .taste-choice.taste-choice-active {
+    color: rgb(var(--color-on-primary));
+    background: rgb(var(--color-primary-container));
+    border-color: rgb(var(--color-primary));
+  }
+
+  .preparation-countdown {
+    animation: preparation-number-in 220ms ease-out both;
+  }
+
+  body.timer-large-mode #timer-display {
+    font-size: 4.25rem;
+  }
+
+  body.timer-large-mode #timer-target-scale {
+    font-size: 6rem;
+  }
+
+  body.timer-large-mode #timer-instruction-wrap,
+  body.timer-large-mode #timer-capability-status,
+  body.timer-large-mode #timer-step-counter,
+  body.timer-large-mode #timer-step-title {
+    display: none;
+  }
+
+  body.timer-large-mode #timer-target-card {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
   html.theme-transitioning body,
   html.theme-transitioning #app,
   html.theme-transitioning #app * {
@@ -194,6 +229,17 @@
   }
 }
 
+@keyframes preparation-number-in {
+  from {
+    opacity: 0.72;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -209,6 +255,10 @@
 
   .timer-action-banner.action-banner-visible {
     animation: action-banner-fade-in 180ms ease-out both;
+  }
+
+  .preparation-countdown {
+    animation: none;
   }
 }
 

@@ -31,7 +31,7 @@
     })();
   </script>
   <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"/>
-  <link rel="stylesheet" href="styles.css?v=2.7.0"/>
+  <link rel="stylesheet" href="styles.css?v=2.8.0"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
@@ -362,15 +362,26 @@
         </div>
 
         <div class="flex flex-col gap-3 my-2 max-h-[70vh] overflow-y-auto pr-1">
-          <fieldset class="bg-surface-container p-4 rounded-xl border border-outline/10 flex flex-col gap-2">
-            <legend class="font-mono text-xs text-primary font-bold px-1">화면 테마</legend>
-            <p class="text-xs text-on-surface-variant leading-relaxed">시스템 설정을 선택하면 iPhone의 라이트·다크 모드를 자동으로 따릅니다.</p>
-            <div class="grid grid-cols-3 gap-1 rounded-xl bg-surface-container-highest/60 p-1 border border-outline/10" role="group" aria-label="화면 테마 선택">
-              <button type="button" data-theme-preference="system" aria-pressed="true" class="min-h-11 rounded-lg px-1 font-mono text-[11px] font-semibold text-on-surface-variant transition-colors">시스템</button>
-              <button type="button" data-theme-preference="light" aria-pressed="false" class="min-h-11 rounded-lg px-1 font-mono text-[11px] font-semibold text-on-surface-variant transition-colors">라이트</button>
-              <button type="button" data-theme-preference="dark" aria-pressed="false" class="min-h-11 rounded-lg px-1 font-mono text-[11px] font-semibold text-on-surface-variant transition-colors">다크</button>
+          <section class="bg-surface-container p-4 rounded-xl border border-outline/10 flex flex-col gap-3" aria-labelledby="theme-section-title">
+            <div class="flex items-start gap-2.5">
+              <span class="material-symbols-outlined mt-0.5 shrink-0 text-xl text-primary" aria-hidden="true">palette</span>
+              <div class="min-w-0">
+                <h4 id="theme-section-title" class="font-mono text-xs text-primary font-bold">화면 테마</h4>
+                <p class="mt-1 text-xs text-on-surface-variant leading-relaxed">시스템 설정을 선택하면 iPhone의 라이트·다크 모드를 자동으로 따릅니다.</p>
+              </div>
             </div>
-          </fieldset>
+            <div class="grid grid-cols-3 gap-1 rounded-xl bg-surface-container-highest/60 p-1 border border-outline/10" role="group" aria-label="화면 테마 선택">
+              <button type="button" data-theme-preference="system" aria-pressed="true" class="theme-option min-h-12 rounded-lg border border-transparent px-1 font-mono text-[11px] font-semibold text-on-surface-variant transition-colors flex items-center justify-center gap-1">
+                <span class="theme-option-icon material-symbols-outlined text-base" aria-hidden="true">devices</span><span>시스템</span>
+              </button>
+              <button type="button" data-theme-preference="light" aria-pressed="false" class="theme-option min-h-12 rounded-lg border border-transparent px-1 font-mono text-[11px] font-semibold text-on-surface-variant transition-colors flex items-center justify-center gap-1">
+                <span class="theme-option-icon material-symbols-outlined text-base" aria-hidden="true">light_mode</span><span>라이트</span>
+              </button>
+              <button type="button" data-theme-preference="dark" aria-pressed="false" class="theme-option min-h-12 rounded-lg border border-transparent px-1 font-mono text-[11px] font-semibold text-on-surface-variant transition-colors flex items-center justify-center gap-1">
+                <span class="theme-option-icon material-symbols-outlined text-base" aria-hidden="true">dark_mode</span><span>다크</span>
+              </button>
+            </div>
+          </section>
 
           <!-- Backup Export Option -->
           <div class="bg-surface-container p-4 rounded-xl border border-outline/10 flex flex-col gap-2">
@@ -462,12 +473,12 @@
 
   </div>
 
-  <script src="theme.js?v=2.7.0" defer></script>
-  <script src="recipes.js?v=2.7.0" defer></script>
-  <script src="calculator.js?v=2.7.0" defer></script>
-  <script src="storage.js?v=2.7.0" defer></script>
-  <script src="timer.js?v=2.7.0" defer></script>
-  <script src="app.js?v=2.7.0" defer></script>
+  <script src="theme.js?v=2.8.0" defer></script>
+  <script src="recipes.js?v=2.8.0" defer></script>
+  <script src="calculator.js?v=2.8.0" defer></script>
+  <script src="storage.js?v=2.8.0" defer></script>
+  <script src="timer.js?v=2.8.0" defer></script>
+  <script src="app.js?v=2.8.0" defer></script>
 
 </body>
 </html>

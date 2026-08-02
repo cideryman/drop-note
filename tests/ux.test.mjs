@@ -83,7 +83,9 @@ for (const buttonId of [
 }
 
 assert.match(appScript, /confirm\("추출 타이머를 종료할까요\?/);
-assert.match(html, /href="styles\.css\?v=2\.7\.0"/);
+assert.match(html, /href="styles\.css\?v=2\.8\.0"/);
+assert.match(sourceCss, /\.theme-option-active/);
+assert.match(sourceCss, /html\.theme-transitioning/);
 assert.doesNotMatch(html, /cdn\.tailwindcss\.com|tailwind\.config/);
 
 console.log("한국어·확대·레이블·터치 영역·종료 확인 UX 검증 완료");

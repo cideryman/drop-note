@@ -10,6 +10,7 @@ const THEME_COLORS = Object.freeze({
 
 let currentThemePreference = "system";
 let themeMediaQuery = null;
+let themeTransitionTimer = null;
 
 function normalizeThemePreference(value) {
   return THEME_PREFERENCES.includes(value) ? value : "system";
@@ -68,10 +69,22 @@ function applyResolvedTheme(resolvedTheme) {
   return theme;
 }
 
+function beginThemeTransition() {
+  const root = document.documentElement;
+  if (!root.classList) return;
+  clearTimeout(themeTransitionTimer);
+  root.classList.add("theme-transitioning");
+  void root.offsetWidth;
+  themeTransitionTimer = setTimeout(() => {
+    root.classList.remove("theme-transitioning");
+  }, 280);
+}
+
 function applyThemePreference(preference, options = {}) {
   const normalized = normalizeThemePreference(preference);
   currentThemePreference = normalized;
   if (options.persist) saveThemePreference(normalized);
+  if (options.animate) beginThemeTransition();
 
   const mediaQuery = getThemeMediaQuery();
   const resolved = resolveTheme(normalized, Boolean(mediaQuery?.matches));
@@ -89,7 +102,7 @@ function handleSystemThemeChange(event) {
 function bindThemeEvents() {
   for (const button of document.querySelectorAll?.("[data-theme-preference]") || []) {
     button.addEventListener("click", () => {
-      applyThemePreference(button.dataset.themePreference, { persist: true });
+      applyThemePreference(button.dataset.themePreference, { persist: true, animate: true });
     });
   }
 

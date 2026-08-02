@@ -25,6 +25,20 @@ assert.equal(byId.kasuya_46.equipmentLabel, "V60");
 assert.equal(byId.kasuya_46.grindBase, "C40 28–32클릭 · 굵게");
 assert.equal(byId.kasuya_46.grindReferenceType, "app-start");
 
+const neoBrew = byId.kasuya_neo_brew;
+assert.equal(sumWater(neoBrew), 300);
+assert.equal(neoBrew.baseBeanWeight, 20);
+assert.equal(totalTime(neoBrew), 210);
+assert.equal(neoBrew.creator, "테츠 카스야");
+assert.equal(neoBrew.recipeName, "THE NEO BREW · 10푸어");
+assert.equal(neoBrew.equipmentLabel, "NEO");
+assert.equal(neoBrew.grindBase, "C40 40–45클릭 · 극굵게");
+assert.equal(neoBrew.grindReferenceType, "official");
+assert.equal(neoBrew.stages.length, 10);
+assert.deepEqual([...neoBrew.stages.map(stage => stage.water)], Array(10).fill(30));
+assert.deepEqual([...neoBrew.stages.map(stage => stage.startSec)], [0, 30, 45, 60, 75, 90, 105, 120, 135, 150]);
+assert.match(neoBrew.sourceUrl, /^https:\/\/www\.youtube\.com\/watch\?/);
+
 assert.equal(sumWater(byId.hario_switch_sweet), 280);
 assert.equal(byId.hario_switch_sweet.baseBeanWeight, 20);
 assert.equal(totalTime(byId.hario_switch_sweet), 180);

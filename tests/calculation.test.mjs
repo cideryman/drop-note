@@ -99,6 +99,7 @@ function calculate(recipeId, beanWeight, iceMode) {
       iceWeight: scaledIceWeight,
       finalWater: scaledFinalWater,
       lastTarget: scaledStages.at(-1).cumulativeTarget,
+      stageWaters: scaledStages.map(stage => stage.scaledWater),
       ratioLabel: document.getElementById("ratio-badge").textContent,
       totalLabel: document.getElementById("total-water-display").textContent,
       finalLabel: document.getElementById("final-yield-display").textContent,
@@ -196,6 +197,17 @@ assert.equal(kasuyaIce.totalLabel, "200g");
 assert.equal(kasuyaIce.finalLabel, "300g");
 assert.equal(kasuyaIce.variantBadge, "앱 기본 아이스 변형");
 assert.match(kasuyaIce.modeDescription, /공식 아이스 버전 없음/);
+
+const neoBrew = calculate("kasuya_neo_brew", 20, false);
+assert.equal(neoBrew.totalWater, 300);
+assert.equal(neoBrew.lastTarget, 300);
+assert.deepEqual(neoBrew.stageWaters, Array(10).fill(30));
+assert.equal(neoBrew.variantBadge, "공식 원본");
+
+const scaledNeoBrew = calculate("kasuya_neo_brew", 15, false);
+assert.equal(scaledNeoBrew.totalWater, 225);
+assert.equal(scaledNeoBrew.lastTarget, 225);
+assert.deepEqual(scaledNeoBrew.stageWaters, [23, 22, 23, 22, 23, 22, 23, 22, 23, 22]);
 
 const iceDefault = calculate("ice_drip_classic", 20, true);
 assert.equal(iceDefault.totalWater, 200);
@@ -436,7 +448,7 @@ const normalizedInvalidDraft = JSON.parse(JSON.stringify(invalidDraft));
 assert.equal(normalizedInvalidDraft.valid, false);
 assert.ok(normalizedInvalidDraft.errors.length >= 6);
 
-for (const recipeId of ["kasuya_46", "hario_switch_sweet", "james_hoffmann_v60", "ice_drip_classic"]) {
+for (const recipeId of ["kasuya_46", "kasuya_neo_brew", "hario_switch_sweet", "james_hoffmann_v60", "ice_drip_classic"]) {
   const range = doseRange(recipeId);
   for (let beanWeight = range.min; beanWeight <= range.max; beanWeight += 0.5) {
     const hotAllowed = recipeId !== "ice_drip_classic";

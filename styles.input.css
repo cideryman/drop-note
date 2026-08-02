@@ -139,10 +139,23 @@
     animation: action-banner-in 180ms ease-out both;
   }
 
-  .theme-option-active {
+  .theme-option.theme-option-active {
     color: rgb(var(--color-on-primary));
     background: rgb(var(--color-primary-container));
-    box-shadow: 0 1px 2px rgb(var(--color-scrim) / 0.14);
+    border-color: rgb(var(--color-primary));
+    box-shadow: 0 4px 12px rgb(var(--color-primary-container) / 0.24);
+  }
+
+  .theme-option.theme-option-active .theme-option-icon {
+    font-variation-settings: "FILL" 1, "wght" 600, "GRAD" 0, "opsz" 24;
+  }
+
+  html.theme-transitioning body,
+  html.theme-transitioning #app,
+  html.theme-transitioning #app * {
+    transition-property: color, background-color, border-color, box-shadow, fill, stroke;
+    transition-duration: 240ms;
+    transition-timing-function: ease-out;
   }
 
   body.timer-focus-active > #app > header {

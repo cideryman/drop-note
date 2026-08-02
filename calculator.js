@@ -207,13 +207,15 @@ function calculateAndRender() {
   const stageModeScale = baseStageWater > 0 ? targetBaseHotWater / baseStageWater : 1;
 
   let cumuScaleTarget = 0;
+  let rawCumulativeWater = 0;
   scaledStages = currentRecipe.stages.map(st => {
-    const scaledWater = Math.round(st.water * ratio * stageModeScale);
     const previousCumulativeTarget = cumuScaleTarget;
-    cumuScaleTarget += scaledWater;
+    rawCumulativeWater += st.water * ratio * stageModeScale;
+    cumuScaleTarget = Math.round(rawCumulativeWater);
+    const scaledWater = cumuScaleTarget - previousCumulativeTarget;
     return {
       ...st,
-      scaledWater: scaledWater,
+      scaledWater,
       previousCumulativeTarget,
       cumulativeTarget: cumuScaleTarget
     };

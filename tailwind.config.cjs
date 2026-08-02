@@ -5,6 +5,7 @@ module.exports = {
     "./calculator.js",
     "./storage.js",
     "./timer.js",
+    "./theme.js",
     "./app.js"
   ],
   theme: {
